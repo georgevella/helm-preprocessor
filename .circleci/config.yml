@@ -35,13 +35,6 @@ workflows:
     jobs:
       - build:
           filters:
-            branches: 
-              only:
-                master
-  release:
-    jobs:
-      - build:
-          filters:
             tags:
               only: /^\d+\.\d+\.\d+$/
 
