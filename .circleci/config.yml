@@ -10,10 +10,12 @@ jobs:
 
     steps:
       - checkout
-      # specify any bash command here prefixed with `run: `
-      - run: dotnet publish --runtime linux-x64 -c release /p:PublishSingleFile=true  -o /tmp/helm-preprocessor/
+      - run: mkdir /tmp/helm-preprocessor/
+      - run: dotnet publish --runtime linux-x64 -c release /p:PublishSingleFile=true  -o /tmp/helm-preprocessor/linux-x64/
       - persist_to_workspace:
           root: /tmp/helm-preprocessor/
+          paths:
+            - linux-x64/helm-preprocessor
         
   publish-github-release:
     docker:
@@ -31,7 +33,11 @@ workflows:
   version: 2
   main:
     jobs:
-      - build
+      - build:
+          filters:
+            branches: 
+              only:
+                master
   release:
     jobs:
       - build:
