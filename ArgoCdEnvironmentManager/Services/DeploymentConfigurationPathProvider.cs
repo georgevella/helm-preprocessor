@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using HelmPreprocessor.Configuration;
 using Microsoft.Extensions.Options;
@@ -23,7 +24,14 @@ namespace HelmPreprocessor.Services
         {
             var renderConfiguration = _renderConfiguration.Value;
             var renderArguments = _renderArguments.Value;
-            
+
+
+            string GetCluster() => renderArguments.Cluster ?? renderConfiguration.Cluster;
+            string GetEnvironment() => renderArguments.Environment ?? renderConfiguration.Environment;
+            string GetVertical() => renderArguments.Vertical ?? renderConfiguration.Vertical;
+            string GetSubVertical() => renderArguments.SubVertical ?? renderConfiguration.SubVertical;
+
+
             var configurationRoot = renderConfiguration.Configuration;
 
             if (string.IsNullOrWhiteSpace(configurationRoot))
@@ -33,17 +41,27 @@ namespace HelmPreprocessor.Services
                     !string.IsNullOrWhiteSpace(renderArguments.Environment ?? renderConfiguration.Environment) &&
                     !string.IsNullOrWhiteSpace(renderArguments.Vertical ?? renderConfiguration.Vertical) &&
                     !string.IsNullOrWhiteSpace(renderArguments.SubVertical ?? renderConfiguration.SubVertical);
-                
-                if (configurationRootValuesAvailable)
+
+                var pathParts = new List<string>();
+                pathParts.Add(renderConfiguration.Repository ?? Environment.CurrentDirectory);
+                pathParts.Add("config");
+
+                if (!string.IsNullOrWhiteSpace(GetVertical()))
                 {
-                    configurationRoot = Path.Combine(
-                        renderConfiguration.Repository ?? Environment.CurrentDirectory,
-                        "config",
-                        (renderArguments.Vertical ?? renderConfiguration.Vertical),
-                        $"{renderArguments.Cluster ?? renderConfiguration.Cluster}-{renderArguments.Environment ?? renderConfiguration.Environment}",
-                        renderArguments.SubVertical ?? renderConfiguration.SubVertical
-                    );
+                    pathParts.Add(GetVertical());
                 }
+
+                if (!string.IsNullOrWhiteSpace(GetEnvironment()) && !string.IsNullOrWhiteSpace(GetCluster()))
+                {
+                    pathParts.Add($"{GetCluster()}-{GetEnvironment()}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(GetSubVertical()))
+                {
+                    pathParts.Add(GetSubVertical());
+                }
+
+                configurationRoot = Path.Combine(pathParts.ToArray());
             }
 
             if (!string.IsNullOrWhiteSpace(configurationRoot))

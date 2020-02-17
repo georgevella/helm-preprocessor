@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArgoCdEnvironmentManager", "ArgoCdEnvironmentManager\ArgoCdEnvironmentManager.csproj", "{A1FB5EFC-02FE-4E9D-A25B-7B277D5B1191}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArgoCdEnvironmentManager.Tests", "ArgoCdEnvironmentManager.Tests\ArgoCdEnvironmentManager.Tests.csproj", "{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,17 @@ Global
 		{A1FB5EFC-02FE-4E9D-A25B-7B277D5B1191}.Release|x64.Build.0 = Release|Any CPU
 		{A1FB5EFC-02FE-4E9D-A25B-7B277D5B1191}.Release|x86.ActiveCfg = Release|Any CPU
 		{A1FB5EFC-02FE-4E9D-A25B-7B277D5B1191}.Release|x86.Build.0 = Release|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Debug|x64.Build.0 = Debug|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Debug|x86.Build.0 = Debug|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Release|x64.ActiveCfg = Release|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Release|x64.Build.0 = Release|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Release|x86.ActiveCfg = Release|Any CPU
+		{7F5ED055-088C-4F6C-AF9D-E316C9D79E5A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
