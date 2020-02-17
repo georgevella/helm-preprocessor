@@ -3,7 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace HelmPreprocessor
+namespace HelmPreprocessor.Extensions
 {
     public static class ServiceCollectionExtensions
     {

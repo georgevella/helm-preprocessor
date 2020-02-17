@@ -4,6 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>HelmPreprocessor</RootNamespace>
+    <LangVersion>latestmajor</LangVersion>
+    <Nullable>annotations</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +14,8 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.1.1" />
     <PackageReference Include="NetEscapades.Configuration.Yaml" Version="2.0.0" />
+    <PackageReference Include="System.CommandLine.Hosting" Version="0.3.0-alpha.20104.2" />
+    <PackageReference Include="System.CommandLine.Rendering" Version="0.3.0-alpha.20104.2" />
   </ItemGroup>
 
 </Project>

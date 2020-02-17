@@ -7,6 +7,11 @@ namespace HelmPreprocessor.Configuration
         
     }
 
+    public class DeploymentConfiguration
+    {
+        public ServicesConfiguration Services { get; set; }
+    }
+
     public class ServiceConfiguration
     {
         public string Runtime { get; set; }
