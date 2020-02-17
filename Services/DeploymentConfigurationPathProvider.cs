@@ -39,6 +39,7 @@ namespace HelmPreprocessor.Services
                     configurationRoot = Path.Combine(
                         renderConfiguration.Repository ?? Environment.CurrentDirectory,
                         "config",
+                        (renderArguments.Vertical ?? renderConfiguration.Vertical),
                         $"{renderArguments.Cluster ?? renderConfiguration.Cluster}-{renderArguments.Environment ?? renderConfiguration.Environment}",
                         renderArguments.SubVertical ?? renderConfiguration.SubVertical
                     );
