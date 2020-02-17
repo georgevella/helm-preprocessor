@@ -56,8 +56,9 @@ namespace HelmPreprocessor
                 Handler = CommandHandler.Create<IHost>(host => Console.WriteLine("list-environments command"))
             };
 
-            var commandLineBuilder = new CommandLineBuilder(RenderEnvironment())
+            var commandLineBuilder = new CommandLineBuilder()
                 .AddCommand(ListEnvironments())
+                .AddCommand(RenderEnvironment())
                 .UseDefaults()
                 .UseHost(
                     extraCliArguments => Host
