@@ -72,6 +72,7 @@ namespace HelmPreprocessor
                             .ConfigureAppConfiguration((hostContext, builder) =>
                             {
                                 builder.AddEnvironmentVariables(prefix: "HELM_");
+                                builder.AddEnvironmentVariables(prefix: "ARGOCD_APP_");
                             })
                             .ConfigureServices((hostContext, services) =>
                             {
@@ -83,6 +84,7 @@ namespace HelmPreprocessor
                                 services.AddScoped<IDeploymentConfigurationProvider, DeploymentConfigurationProvider>();
 
                                 services.Configure<RenderConfiguration>(hostContext.Configuration);
+                                services.Configure<ArgoCdEnvironment>(hostContext.Configuration);
                                 services.AddOptions<RenderArguments>().BindCommandLine();
 
                             });
@@ -95,13 +97,5 @@ namespace HelmPreprocessor
             
         }
 
-        // private static IHostBuilder CreateHostBuilder(string[] args) =>
-        //     Host.CreateDefaultBuilder(args)
-        //         .ConfigureHostConfiguration(builder =>
-        //         {
-        //             builder.AddEnvironmentVariables(prefix: "HELM_");
-        //             builder.AddCommandLine(args);
-        //         })
-                
     }
 }

@@ -16,14 +16,23 @@ namespace HelmPreprocessor.Services
     {
         private readonly IDeploymentConfigurationPathProvider _deploymentConfigurationPathProvider;
         private readonly IDeploymentConfigurationProvider _deploymentConfigurationProvider;
+        private readonly IOptions<ArgoCdEnvironment> _argoCdEnvironment;
+        private readonly IOptions<RenderConfiguration> _renderConfiguration;
+        private readonly IOptions<RenderArguments> _renderArguments;
 
         public RenderCommandHandlerService(
             IDeploymentConfigurationPathProvider deploymentConfigurationPathProvider,
-            IDeploymentConfigurationProvider deploymentConfigurationProvider
+            IDeploymentConfigurationProvider deploymentConfigurationProvider,
+            IOptions<ArgoCdEnvironment> argoCdEnvironment,
+            IOptions<RenderConfiguration> renderConfiguration,
+            IOptions<RenderArguments> renderArguments
         )
         {
             _deploymentConfigurationPathProvider = deploymentConfigurationPathProvider;
             _deploymentConfigurationProvider = deploymentConfigurationProvider;
+            _argoCdEnvironment = argoCdEnvironment;
+            _renderConfiguration = renderConfiguration;
+            _renderArguments = renderArguments;
         }
         
         public Task Run(CancellationToken cancellationToken)
@@ -78,10 +87,30 @@ namespace HelmPreprocessor.Services
                         processStartInfo.ArgumentList.Add(x.FullName);   
                     }
                 });
+            
+            
+            processStartInfo.ArgumentList.Add("--name");
+            processStartInfo.ArgumentList.Add(GenerateReleaseName());
 
             Process.Start(processStartInfo)?.WaitForExit();
             
             return Task.CompletedTask;
+        }
+
+        private string GenerateReleaseName()
+        {
+            if (string.IsNullOrEmpty(_argoCdEnvironment.Value.Name))
+            {
+                return string.Format(
+                    "{0}-{1}-{2}-{3}",
+                    _renderArguments.Value.Cluster ?? _renderConfiguration.Value.Cluster,
+                    _renderArguments.Value.Environment ?? _renderConfiguration.Value.Environment,
+                    _renderArguments.Value.Vertical ?? _renderConfiguration.Value.Vertical,
+                    _renderArguments.Value.SubVertical ?? _renderConfiguration.Value.SubVertical
+                );
+            }
+
+            return _argoCdEnvironment.Value.Name;
         }
     }
 }

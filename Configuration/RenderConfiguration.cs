@@ -6,7 +6,7 @@
 
         public string Configuration { get; set; }
     }
-
+    
     public class RenderArguments
     {
         public string Environment { get; set; }
