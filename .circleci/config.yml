@@ -17,7 +17,7 @@ jobs:
       - persist_to_workspace:
           root: /tmp/helm-preprocessor/
           paths:
-            - linux-x64/helm-preprocessor
+            - *
         
   publish-github-release:
     docker:
