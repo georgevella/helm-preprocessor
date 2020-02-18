@@ -19,13 +19,15 @@ namespace HelmPreprocessor.Services
         private readonly IOptions<ArgoCdEnvironment> _argoCdEnvironment;
         private readonly IOptions<RenderConfiguration> _renderConfiguration;
         private readonly IOptions<RenderArguments> _renderArguments;
+        private readonly ISecretsHandler _secretsHandler;
 
         public RenderCommandHandlerService(
             IDeploymentConfigurationPathProvider deploymentConfigurationPathProvider,
             IDeploymentConfigurationProvider deploymentConfigurationProvider,
             IOptions<ArgoCdEnvironment> argoCdEnvironment,
             IOptions<RenderConfiguration> renderConfiguration,
-            IOptions<RenderArguments> renderArguments
+            IOptions<RenderArguments> renderArguments,
+            ISecretsHandler secretsHandler
         )
         {
             _deploymentConfigurationPathProvider = deploymentConfigurationPathProvider;
@@ -33,6 +35,7 @@ namespace HelmPreprocessor.Services
             _argoCdEnvironment = argoCdEnvironment;
             _renderConfiguration = renderConfiguration;
             _renderArguments = renderArguments;
+            _secretsHandler = secretsHandler;
         }
         
         public Task Run(CancellationToken cancellationToken)
@@ -67,19 +70,21 @@ namespace HelmPreprocessor.Services
             processStartInfo.ArgumentList.Add(".");
             
             helmValueFiles
-                .ForEach( x =>
+                .ForEach( async x =>
                 {
                     if (!x.Exists) return;
                     
-                    if (x.Name.Equals("secrets.yaml"))
+                    if (x.Name.Equals(deploymentConfiguration.Secrets.Filename))
                     {
-                        var temporaryFile = Path.Combine(x.DirectoryName, $"{x.Name}-dec.yaml");
-                        x.CopyTo(temporaryFile, true);
-                        var psi = new ProcessStartInfo("sops", $"-d -i {temporaryFile}");
-                        Process.Start(psi)?.WaitForExit();
+                        // var temporaryFile = Path.Combine(x.DirectoryName, $"{x.Name}-dec.yaml");
+                        // x.CopyTo(temporaryFile, true);
+                        // var psi = new ProcessStartInfo("sops", $"-d -i {temporaryFile}");
+                        // Process.Start(psi)?.WaitForExit();
+
+                        var decodedFile = await _secretsHandler.Decode(x);
                         
                         processStartInfo.ArgumentList.Add("-f");
-                        processStartInfo.ArgumentList.Add(temporaryFile);
+                        processStartInfo.ArgumentList.Add(decodedFile.FullName);
                     }
                     else
                     {
