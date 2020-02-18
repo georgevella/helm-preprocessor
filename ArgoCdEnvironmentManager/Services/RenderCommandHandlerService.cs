@@ -70,7 +70,7 @@ namespace HelmPreprocessor.Services
             processStartInfo.ArgumentList.Add(".");
             
             helmValueFiles
-                .ForEach( async x =>
+                .ForEach( x =>
                 {
                     if (!x.Exists) return;
                     
@@ -81,7 +81,7 @@ namespace HelmPreprocessor.Services
                         // var psi = new ProcessStartInfo("sops", $"-d -i {temporaryFile}");
                         // Process.Start(psi)?.WaitForExit();
 
-                        var decodedFile = await _secretsHandler.Decode(x);
+                        var decodedFile = _secretsHandler.Decode(x);
                         
                         processStartInfo.ArgumentList.Add("-f");
                         processStartInfo.ArgumentList.Add(decodedFile.FullName);
