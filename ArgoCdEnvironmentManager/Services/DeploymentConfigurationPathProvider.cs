@@ -6,6 +6,12 @@ using Microsoft.Extensions.Options;
 
 namespace HelmPreprocessor.Services
 {
+    public interface IDeploymentConfigurationPathProvider
+    {
+        bool TryGetConfigurationRoot(out DirectoryInfo configurationRootDirectory);
+        DirectoryInfo GetDeploymentRepository();
+    }
+    
     public class DeploymentConfigurationPathProvider : IDeploymentConfigurationPathProvider
     {
         private readonly IOptions<RenderConfiguration> _renderConfiguration;
@@ -18,6 +24,11 @@ namespace HelmPreprocessor.Services
         {
             _renderConfiguration = renderConfiguration;
             _renderArguments = renderArguments;
+        }
+
+        public DirectoryInfo GetDeploymentRepository()
+        {
+            return new DirectoryInfo(_renderConfiguration.Value.Repository ?? Environment.CurrentDirectory);
         }
         
         public bool TryGetConfigurationRoot(out DirectoryInfo configurationRootDirectory)
@@ -43,7 +54,7 @@ namespace HelmPreprocessor.Services
                     !string.IsNullOrWhiteSpace(renderArguments.SubVertical ?? renderConfiguration.SubVertical);
 
                 var pathParts = new List<string>();
-                pathParts.Add(renderConfiguration.Repository ?? Environment.CurrentDirectory);
+                pathParts.Add(GetDeploymentRepository().FullName);
                 pathParts.Add("config");
 
                 if (!string.IsNullOrWhiteSpace(GetVertical()))

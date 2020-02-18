@@ -22,9 +22,8 @@ namespace HelmPreprocessor
     {
         public static async Task<int> Main(string[] args)
         {
-            static BaseCommand<RenderCommandHandlerService> RenderEnvironment()
-            {
-                return new BaseCommand<RenderCommandHandlerService>(
+            static BaseCommand<RenderCommandHandlerService> RenderEnvironment() =>
+                new BaseCommand<RenderCommandHandlerService>(
                     "render",
                     "Renders the helm chart and produces the K8S resources that will be deployed to the cluster."
                 )
@@ -46,15 +45,11 @@ namespace HelmPreprocessor
                         Argument = new Argument<string>()
                     },
                 };
-            }
 
             static Command ListEnvironments() => new BaseCommand<ListConfigurationsCommandHandlerService>(
                 "list-configurations",
                 "List all configurations present in the repository."
-            )
-            {
-                Handler = CommandHandler.Create<IHost>(host => Console.WriteLine("list-environments command"))
-            };
+            );
 
             var commandLineBuilder = new CommandLineBuilder()
                 .AddCommand(ListEnvironments())
@@ -83,6 +78,8 @@ namespace HelmPreprocessor
                                     >();
                                 services.AddScoped<IDeploymentConfigurationProvider, DeploymentConfigurationProvider>();
 
+                                services.AddScoped<ISecretsHandler, SopsSecretsHandler>();
+                                
                                 services.Configure<RenderConfiguration>(hostContext.Configuration);
                                 services.Configure<ArgoCdEnvironment>(hostContext.Configuration);
                                 services.AddOptions<RenderArguments>().BindCommandLine();

@@ -5,6 +5,11 @@ using Microsoft.Extensions.Configuration;
 
 namespace HelmPreprocessor.Services
 {
+    public interface IDeploymentConfigurationProvider
+    {
+        bool GetDeploymentConfiguration(out DeploymentConfiguration deploymentConfiguration);
+    }
+    
     public class DeploymentConfigurationProvider : IDeploymentConfigurationProvider
     {
         private readonly IDeploymentConfigurationPathProvider _deploymentConfigurationPathProvider;
@@ -49,10 +54,5 @@ namespace HelmPreprocessor.Services
 
             return true;
         }
-    }
-
-    public interface IDeploymentConfigurationProvider
-    {
-        bool GetDeploymentConfiguration(out DeploymentConfiguration deploymentConfiguration);
     }
 }
