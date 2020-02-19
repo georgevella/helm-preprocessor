@@ -65,15 +65,53 @@ namespace HelmPreprocessor.Services
                 );
             }
 
+            FetchHelmDependencies();
+            
+            GenerateHelmTemplate(helmValueFiles, deploymentConfiguration);
+
+            return Task.CompletedTask;
+        }
+
+        private void FetchHelmDependencies()
+        {
+            var requirementsLockFile = Path.Combine(
+                _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName, 
+                "requirements.lock"
+                );
+            if (File.Exists(requirementsLockFile))
+            {
+                File.Delete(requirementsLockFile);
+            }
+            
+            var processStartInfo = new ProcessStartInfo("helm");
+            processStartInfo.ArgumentList.Add("dependency");
+            processStartInfo.ArgumentList.Add("build");
+            processStartInfo.WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName;
+            processStartInfo.RedirectStandardError = 
+                processStartInfo.RedirectStandardOutput = true;
+
+            var process = new Process()
+            {
+                StartInfo = processStartInfo
+            };
+            process.OutputDataReceived += (sender, args) => { /* do nothing */  };
+            process.ErrorDataReceived += (sender, args) => { /* do nothing */ };
+            process.Start();
+            process.WaitForExit();
+        }
+
+        private void GenerateHelmTemplate(List<FileInfo> helmValueFiles, DeploymentConfiguration deploymentConfiguration)
+        {
             var processStartInfo = new ProcessStartInfo("helm");
             processStartInfo.ArgumentList.Add("template");
             processStartInfo.ArgumentList.Add(".");
+            processStartInfo.WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName;
             
             helmValueFiles
-                .ForEach( x =>
+                .ForEach(x =>
                 {
                     if (!x.Exists) return;
-                    
+
                     if (x.Name.Equals(deploymentConfiguration.Secrets.Filename))
                     {
                         // var temporaryFile = Path.Combine(x.DirectoryName, $"{x.Name}-dec.yaml");
@@ -82,24 +120,22 @@ namespace HelmPreprocessor.Services
                         // Process.Start(psi)?.WaitForExit();
 
                         var decodedFile = _secretsHandler.Decode(x);
-                        
+
                         processStartInfo.ArgumentList.Add("-f");
                         processStartInfo.ArgumentList.Add(decodedFile.FullName);
                     }
                     else
                     {
                         processStartInfo.ArgumentList.Add("-f");
-                        processStartInfo.ArgumentList.Add(x.FullName);   
+                        processStartInfo.ArgumentList.Add(x.FullName);
                     }
                 });
-            
-            
+
+
             processStartInfo.ArgumentList.Add("--name");
             processStartInfo.ArgumentList.Add(GenerateReleaseName());
 
             Process.Start(processStartInfo)?.WaitForExit();
-            
-            return Task.CompletedTask;
         }
 
         private string GenerateReleaseName()
