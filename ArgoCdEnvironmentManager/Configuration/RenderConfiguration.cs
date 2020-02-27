@@ -35,5 +35,9 @@
         public string SubVertical { get; set; }
         
         public string Cluster { get; set; }
+        
+        public string Namespace { get; set; }
+        
+        public string Name { get; set; }
     }
 }

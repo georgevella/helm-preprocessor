@@ -44,6 +44,14 @@ namespace HelmPreprocessor
                     {
                         Argument = new Argument<string>()
                     },
+                    new Option(new[] {"-n", "--namespace"}, "Name of namespace.")
+                    {
+                        Argument = new Argument<string>()
+                    },
+                    new Option(new[] {"--name"}, "Name of the release.")
+                    {
+                        Argument = new Argument<string>()
+                    },
                 };
 
             static Command ListEnvironments() => new BaseCommand<ListConfigurationsCommandHandlerService>(
@@ -81,7 +89,9 @@ namespace HelmPreprocessor
                                 services.AddScoped<ISecretsHandler, SopsSecretsHandler>();
                                 
                                 services.Configure<RenderConfiguration>(hostContext.Configuration);
+                                
                                 services.Configure<ArgoCdEnvironment>(hostContext.Configuration);
+                                
                                 services.AddOptions<RenderArguments>().BindCommandLine();
 
                             });

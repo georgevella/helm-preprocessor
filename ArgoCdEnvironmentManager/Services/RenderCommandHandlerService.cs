@@ -134,24 +134,53 @@ namespace HelmPreprocessor.Services
 
             processStartInfo.ArgumentList.Add("--name");
             processStartInfo.ArgumentList.Add(GenerateReleaseName());
+            
+            var namespaceName = GetNamespace();
+            if (!string.IsNullOrEmpty(namespaceName))
+            {
+                processStartInfo.ArgumentList.Add("--namespace");
+                processStartInfo.ArgumentList.Add(namespaceName);
+            }
+            
 
             Process.Start(processStartInfo)?.WaitForExit();
         }
 
-        private string GenerateReleaseName()
+        private string GetNamespace()
         {
-            if (string.IsNullOrEmpty(_argoCdEnvironment.Value.Name))
+            if (!string.IsNullOrEmpty(_argoCdEnvironment.Value.Namespace))
             {
-                return string.Format(
-                    "{0}-{1}-{2}-{3}",
-                    _renderArguments.Value.Cluster ?? _renderConfiguration.Value.Cluster,
-                    _renderArguments.Value.Environment ?? _renderConfiguration.Value.Environment,
-                    _renderArguments.Value.Vertical ?? _renderConfiguration.Value.Vertical,
-                    _renderArguments.Value.SubVertical ?? _renderConfiguration.Value.SubVertical
-                );
+                return _argoCdEnvironment.Value.Namespace;
             }
 
-            return _argoCdEnvironment.Value.Name;
+            if (!string.IsNullOrEmpty(_renderArguments.Value.Namespace))
+            {
+                return _renderArguments.Value.Namespace;
+            }
+
+            return null;
+        }
+
+        private string GenerateReleaseName()
+        {
+            if (!string.IsNullOrEmpty(_argoCdEnvironment.Value.Name))
+            {
+                return _argoCdEnvironment.Value.Name;
+            }
+
+            if (!string.IsNullOrEmpty(_renderArguments.Value.Name))
+            {
+                return _renderArguments.Value.Name;
+            }
+            
+            var name =
+                $"{_renderArguments.Value.Cluster ?? _renderConfiguration.Value.Cluster}" +
+                $"-{_renderArguments.Value.Environment ?? _renderConfiguration.Value.Environment}" +
+                $"-{_renderArguments.Value.Vertical ?? _renderConfiguration.Value.Vertical}" +
+                $"-{_renderArguments.Value.SubVertical ?? _renderConfiguration.Value.SubVertical}";
+
+            return name.Trim('-');
+
         }
     }
 }
