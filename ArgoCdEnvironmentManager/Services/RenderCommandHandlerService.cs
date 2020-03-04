@@ -19,6 +19,7 @@ namespace HelmPreprocessor.Services
         private readonly IOptions<ArgoCdEnvironment> _argoCdEnvironment;
         private readonly IOptions<RenderConfiguration> _renderConfiguration;
         private readonly IOptions<RenderArguments> _renderArguments;
+        private readonly IOptions<GlobalArguments> _globalArguments;
         private readonly ISecretsHandler _secretsHandler;
 
         public RenderCommandHandlerService(
@@ -27,6 +28,7 @@ namespace HelmPreprocessor.Services
             IOptions<ArgoCdEnvironment> argoCdEnvironment,
             IOptions<RenderConfiguration> renderConfiguration,
             IOptions<RenderArguments> renderArguments,
+            IOptions<GlobalArguments> globalArguments,
             ISecretsHandler secretsHandler
         )
         {
@@ -35,6 +37,7 @@ namespace HelmPreprocessor.Services
             _argoCdEnvironment = argoCdEnvironment;
             _renderConfiguration = renderConfiguration;
             _renderArguments = renderArguments;
+            _globalArguments = globalArguments;
             _secretsHandler = secretsHandler;
         }
         
@@ -141,7 +144,11 @@ namespace HelmPreprocessor.Services
                 processStartInfo.ArgumentList.Add("--namespace");
                 processStartInfo.ArgumentList.Add(namespaceName);
             }
-            
+
+            if (_globalArguments.Value.Verbose)
+            {
+                Console.WriteLine($"{processStartInfo.FileName} {string.Join(" ", processStartInfo.ArgumentList)}");
+            }
 
             Process.Start(processStartInfo)?.WaitForExit();
         }
@@ -165,11 +172,20 @@ namespace HelmPreprocessor.Services
         {
             if (!string.IsNullOrEmpty(_argoCdEnvironment.Value.Name))
             {
+                if (_globalArguments.Value.Verbose)
+                {
+                    Console.WriteLine("Using ReleaseName from ARGOCD env");
+                }
                 return _argoCdEnvironment.Value.Name;
             }
 
             if (!string.IsNullOrEmpty(_renderArguments.Value.Name))
             {
+                if (_globalArguments.Value.Verbose)
+                {
+                    Console.WriteLine("Using ReleaseName from arguments");
+                }
+                
                 return _renderArguments.Value.Name;
             }
             

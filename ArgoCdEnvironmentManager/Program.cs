@@ -62,6 +62,7 @@ namespace HelmPreprocessor
             var commandLineBuilder = new CommandLineBuilder()
                 .AddCommand(ListEnvironments())
                 .AddCommand(RenderEnvironment())
+                .AddOption(new Option(new[] {"--verbose"}))
                 .UseDefaults()
                 .UseHost(
                     extraCliArguments => Host
@@ -93,6 +94,7 @@ namespace HelmPreprocessor
                                 services.Configure<ArgoCdEnvironment>(hostContext.Configuration);
                                 
                                 services.AddOptions<RenderArguments>().BindCommandLine();
+                                services.AddOptions<GlobalArguments>().BindCommandLine();
 
                             });
                     }
