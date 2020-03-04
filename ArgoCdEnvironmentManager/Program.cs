@@ -65,18 +65,34 @@ namespace HelmPreprocessor
                 .AddOption(new Option(new[] {"--verbose"}))
                 .UseDefaults()
                 .UseHost(
-                    extraCliArguments => Host
-                        .CreateDefaultBuilder()
-                        .ConfigureLogging(builder =>
-                            builder.AddFilter("Microsoft.Hosting", LogLevel.Error)
+                    extraCliArguments => new HostBuilder()
+                        .UseDefaultServiceProvider((context, options) => { })
+                        .ConfigureHostConfiguration(builder =>
+                        {
+                            builder.AddEnvironmentVariables(prefix: "DOTNET_");
+                        })
+                        .ConfigureLogging((hostingContext, logging) =>
+                            {
+                                logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
+                                logging.AddConsole();
+                                logging.AddDebug();
+                                logging.AddEventSourceLogger();
+                                logging.AddFilter("Microsoft.Hosting", LogLevel.Error);
+                            }
                         ),
                     hostBuilder =>
                     {
                         hostBuilder
                             .ConfigureAppConfiguration((hostContext, builder) =>
                             {
+                                var env = hostContext.HostingEnvironment;
+                                
                                 builder.AddEnvironmentVariables(prefix: "HELM_");
                                 builder.AddEnvironmentVariables(prefix: "ARGOCD_APP_");
+                                
+                                builder
+                                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                                    .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true);
                             })
                             .ConfigureServices((hostContext, services) =>
                             {
