@@ -11,6 +11,7 @@ using HelmPreprocessor.Commands;
 using HelmPreprocessor.Configuration;
 using HelmPreprocessor.Extensions;
 using HelmPreprocessor.Services;
+using HelmPreprocessor.Services.DeploymentRenderers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -51,6 +52,15 @@ namespace HelmPreprocessor
                     new Option(new[] {"--name"}, "Name of the release.")
                     {
                         Argument = new Argument<string>()
+                    },
+                    
+                    new Option(new[] {"--renderer"}, "Renderer to use to generate the chart.")
+                    {
+                        Argument = new Argument<string>()
+                        {
+                            
+                        },
+                        Required = false
                     },
                 };
 
@@ -108,6 +118,10 @@ namespace HelmPreprocessor
                                 services.Configure<RenderConfiguration>(hostContext.Configuration);
                                 
                                 services.Configure<ArgoCdEnvironment>(hostContext.Configuration);
+
+                                services.AddScoped<IDeploymentRenderer, Helm2DeploymentRenderer>();
+                                services.AddScoped<IDeploymentRenderer, Helm3DeploymentRenderer>();
+                                services.AddSingleton<IDeploymentRendererFactory, DeploymentRendererFactory>();
                                 
                                 services.AddOptions<RenderArguments>().BindCommandLine();
                                 services.AddOptions<GlobalArguments>().BindCommandLine();

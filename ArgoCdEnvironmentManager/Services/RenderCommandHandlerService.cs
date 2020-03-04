@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using HelmPreprocessor.Commands;
 using HelmPreprocessor.Configuration;
+using HelmPreprocessor.Services.DeploymentRenderers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
@@ -21,6 +22,7 @@ namespace HelmPreprocessor.Services
         private readonly IOptions<RenderArguments> _renderArguments;
         private readonly IOptions<GlobalArguments> _globalArguments;
         private readonly ISecretsHandler _secretsHandler;
+        private readonly IDeploymentRendererFactory _deploymentRendererFactory;
 
         public RenderCommandHandlerService(
             IDeploymentConfigurationPathProvider deploymentConfigurationPathProvider,
@@ -29,7 +31,8 @@ namespace HelmPreprocessor.Services
             IOptions<RenderConfiguration> renderConfiguration,
             IOptions<RenderArguments> renderArguments,
             IOptions<GlobalArguments> globalArguments,
-            ISecretsHandler secretsHandler
+            ISecretsHandler secretsHandler,
+            IDeploymentRendererFactory deploymentRendererFactory
         )
         {
             _deploymentConfigurationPathProvider = deploymentConfigurationPathProvider;
@@ -39,6 +42,7 @@ namespace HelmPreprocessor.Services
             _renderArguments = renderArguments;
             _globalArguments = globalArguments;
             _secretsHandler = secretsHandler;
+            _deploymentRendererFactory = deploymentRendererFactory;
         }
         
         public Task Run(CancellationToken cancellationToken)
@@ -68,47 +72,62 @@ namespace HelmPreprocessor.Services
                 );
             }
 
-            FetchHelmDependencies();
+            var deploymentRenderer = _deploymentRendererFactory.GetDeploymentRenderer(_renderArguments.Value.Renderer);
+
+            var deploymentContext = new HelmRendererContext()
+            {
+                Name = GenerateName(),
+                Namespace = GenerateNamespace(),
+                WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName
+            };
             
-            GenerateHelmTemplate(helmValueFiles, deploymentConfiguration);
+            deploymentRenderer.Initialize(deploymentContext);
+
+            GenerateHelmTemplate(deploymentRenderer, helmValueFiles, deploymentConfiguration);
 
             return Task.CompletedTask;
         }
 
-        private void FetchHelmDependencies()
-        {
-            var requirementsLockFile = Path.Combine(
-                _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName, 
-                "requirements.lock"
-                );
-            if (File.Exists(requirementsLockFile))
-            {
-                File.Delete(requirementsLockFile);
-            }
-            
-            var processStartInfo = new ProcessStartInfo("helm");
-            processStartInfo.ArgumentList.Add("dependency");
-            processStartInfo.ArgumentList.Add("build");
-            processStartInfo.WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName;
-            processStartInfo.RedirectStandardError = 
-                processStartInfo.RedirectStandardOutput = true;
+        // private void FetchHelmDependencies()
+        // {
+        //     var requirementsLockFile = Path.Combine(
+        //         _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName, 
+        //         "requirements.lock"
+        //         );
+        //     if (File.Exists(requirementsLockFile))
+        //     {
+        //         File.Delete(requirementsLockFile);
+        //     }
+        //     
+        //     var processStartInfo = new ProcessStartInfo("helm");
+        //     processStartInfo.ArgumentList.Add("dependency");
+        //     processStartInfo.ArgumentList.Add("build");
+        //     processStartInfo.WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName;
+        //     processStartInfo.RedirectStandardError = 
+        //         processStartInfo.RedirectStandardOutput = true;
+        //
+        //     var process = new Process()
+        //     {
+        //         StartInfo = processStartInfo
+        //     };
+        //     process.OutputDataReceived += (sender, args) => { /* do nothing */  };
+        //     process.ErrorDataReceived += (sender, args) => { /* do nothing */ };
+        //     process.Start();
+        //     process.WaitForExit();
+        // }
 
-            var process = new Process()
+        private void GenerateHelmTemplate(
+            IDeploymentRenderer deploymentRenderer, 
+            List<FileInfo> helmValueFiles, 
+            DeploymentConfiguration deploymentConfiguration
+            )
+        {
+            var helmContext = new HelmRendererContext()
             {
-                StartInfo = processStartInfo
+                Name = GenerateName(),
+                Namespace = GenerateNamespace(),
+                WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName
             };
-            process.OutputDataReceived += (sender, args) => { /* do nothing */  };
-            process.ErrorDataReceived += (sender, args) => { /* do nothing */ };
-            process.Start();
-            process.WaitForExit();
-        }
-
-        private void GenerateHelmTemplate(List<FileInfo> helmValueFiles, DeploymentConfiguration deploymentConfiguration)
-        {
-            var processStartInfo = new ProcessStartInfo("helm");
-            processStartInfo.ArgumentList.Add("template");
-            processStartInfo.ArgumentList.Add(".");
-            processStartInfo.WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName;
             
             helmValueFiles
                 .ForEach(x =>
@@ -117,43 +136,19 @@ namespace HelmPreprocessor.Services
 
                     if (x.Name.Equals(deploymentConfiguration.Secrets.Filename))
                     {
-                        // var temporaryFile = Path.Combine(x.DirectoryName, $"{x.Name}-dec.yaml");
-                        // x.CopyTo(temporaryFile, true);
-                        // var psi = new ProcessStartInfo("sops", $"-d -i {temporaryFile}");
-                        // Process.Start(psi)?.WaitForExit();
-
                         var decodedFile = _secretsHandler.Decode(x);
-
-                        processStartInfo.ArgumentList.Add("-f");
-                        processStartInfo.ArgumentList.Add(decodedFile.FullName);
+                        helmContext.ValueFiles.Add(decodedFile.FullName);
                     }
                     else
                     {
-                        processStartInfo.ArgumentList.Add("-f");
-                        processStartInfo.ArgumentList.Add(x.FullName);
+                        helmContext.ValueFiles.Add(x.FullName);
                     }
                 });
-
-
-            processStartInfo.ArgumentList.Add("--name");
-            processStartInfo.ArgumentList.Add(GenerateReleaseName());
             
-            var namespaceName = GetNamespace();
-            if (!string.IsNullOrEmpty(namespaceName))
-            {
-                processStartInfo.ArgumentList.Add("--namespace");
-                processStartInfo.ArgumentList.Add(namespaceName);
-            }
-
-            if (_globalArguments.Value.Verbose)
-            {
-                Console.WriteLine($"{processStartInfo.FileName} {string.Join(" ", processStartInfo.ArgumentList)}");
-            }
-
-            Process.Start(processStartInfo)?.WaitForExit();
+            deploymentRenderer.Render(helmContext);
         }
 
-        private string GetNamespace()
+        private string GenerateNamespace()
         {
             if (!string.IsNullOrEmpty(_argoCdEnvironment.Value.Namespace))
             {
@@ -167,8 +162,8 @@ namespace HelmPreprocessor.Services
 
             return null;
         }
-
-        private string GenerateReleaseName()
+        
+        private string GenerateName()
         {
             if (!string.IsNullOrEmpty(_argoCdEnvironment.Value.Name))
             {

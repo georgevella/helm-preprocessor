@@ -22,14 +22,8 @@
     /// </summary>
     public class RenderArguments
     {
-        /// <summary>
-        ///     The name of the environment to render.
-        /// </summary>
         public string Environment { get; set; }
         
-        /// <summary>
-        ///     
-        /// </summary>
         public string Vertical { get; set; }
         
         public string SubVertical { get; set; }
@@ -39,5 +33,7 @@
         public string Namespace { get; set; }
         
         public string Name { get; set; }
+
+        public string Renderer { get; set; } = "helm2";
     }
 }
