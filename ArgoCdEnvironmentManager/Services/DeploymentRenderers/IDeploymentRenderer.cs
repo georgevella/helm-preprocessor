@@ -20,6 +20,11 @@ namespace HelmPreprocessor.Services
         public string Namespace { get; set; }
         
         public string WorkingDirectory { get; set; }
+        
+        public string? Cluster { get; set; }
+        public string? Environment { get; set; }
+        public string? Vertical { get; set; }
+        public string? SubVertical { get; set; }
     }
 
     public class HelmRendererContext : DeploymentRendererContext

@@ -88,34 +88,6 @@ namespace HelmPreprocessor.Services
             return Task.CompletedTask;
         }
 
-        // private void FetchHelmDependencies()
-        // {
-        //     var requirementsLockFile = Path.Combine(
-        //         _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName, 
-        //         "requirements.lock"
-        //         );
-        //     if (File.Exists(requirementsLockFile))
-        //     {
-        //         File.Delete(requirementsLockFile);
-        //     }
-        //     
-        //     var processStartInfo = new ProcessStartInfo("helm");
-        //     processStartInfo.ArgumentList.Add("dependency");
-        //     processStartInfo.ArgumentList.Add("build");
-        //     processStartInfo.WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName;
-        //     processStartInfo.RedirectStandardError = 
-        //         processStartInfo.RedirectStandardOutput = true;
-        //
-        //     var process = new Process()
-        //     {
-        //         StartInfo = processStartInfo
-        //     };
-        //     process.OutputDataReceived += (sender, args) => { /* do nothing */  };
-        //     process.ErrorDataReceived += (sender, args) => { /* do nothing */ };
-        //     process.Start();
-        //     process.WaitForExit();
-        // }
-
         private void GenerateHelmTemplate(
             IDeploymentRenderer deploymentRenderer, 
             List<FileInfo> helmValueFiles, 
@@ -126,7 +98,12 @@ namespace HelmPreprocessor.Services
             {
                 Name = GenerateName(),
                 Namespace = GenerateNamespace(),
-                WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName
+                WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName,
+                
+                Cluster = _renderArguments.Value.Cluster ?? _renderConfiguration.Value.Cluster,
+                Environment = _renderArguments.Value.Environment ?? _renderConfiguration.Value.Environment,
+                Vertical = _renderArguments.Value.Vertical ?? _renderConfiguration.Value.Vertical,
+                SubVertical = _renderArguments.Value.SubVertical ?? _renderConfiguration.Value.SubVertical
             };
             
             helmValueFiles
