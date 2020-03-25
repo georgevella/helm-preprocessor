@@ -1,23 +1,19 @@
-﻿using System;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
-using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using HelmPreprocessor.Commands;
 using HelmPreprocessor.Commands.Arguments;
 using HelmPreprocessor.Commands.Handlers;
 using HelmPreprocessor.Configuration;
-using HelmPreprocessor.Extensions;
 using HelmPreprocessor.Services;
 using HelmPreprocessor.Services.DeploymentRenderers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace HelmPreprocessor
 {
@@ -79,6 +75,14 @@ namespace HelmPreprocessor
                 .UseHost(
                     extraCliArguments => new HostBuilder()
                         .UseDefaultServiceProvider((context, options) => { })
+                        .ConfigureLogging((context, builder) =>
+                        {
+                            builder.AddConsole(options =>
+                            {
+                                options.DisableColors = false;
+                                options.Format = ConsoleLoggerFormat.Default;
+                            });
+                        })
                         .ConfigureHostConfiguration(builder =>
                         {
                             builder.AddEnvironmentVariables(prefix: "DOTNET_");
