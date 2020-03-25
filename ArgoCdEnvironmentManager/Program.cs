@@ -8,6 +8,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using HelmPreprocessor.Commands;
+using HelmPreprocessor.Commands.Arguments;
+using HelmPreprocessor.Commands.Handlers;
 using HelmPreprocessor.Configuration;
 using HelmPreprocessor.Extensions;
 using HelmPreprocessor.Services;
@@ -23,8 +25,8 @@ namespace HelmPreprocessor
     {
         public static async Task<int> Main(string[] args)
         {
-            static BaseCommand<RenderCommandHandlerService> RenderEnvironment() =>
-                new BaseCommand<RenderCommandHandlerService>(
+            static BaseCommand<RenderCommandHandler> RenderEnvironment() =>
+                new BaseCommand<RenderCommandHandler>(
                     "render",
                     "Renders the helm chart and produces the K8S resources that will be deployed to the cluster."
                 )
@@ -64,7 +66,7 @@ namespace HelmPreprocessor
                     },
                 };
 
-            static Command ListEnvironments() => new BaseCommand<ListConfigurationsCommandHandlerService>(
+            static Command ListEnvironments() => new BaseCommand<ListConfigurationsCommandHandler>(
                 "list-configurations",
                 "List all configurations present in the repository."
             );
@@ -107,7 +109,7 @@ namespace HelmPreprocessor
                             .ConfigureServices((hostContext, services) =>
                             {
                                 //services.AddHostedService<Worker>();
-                                services.AddScoped<RenderCommandHandlerService>();
+                                services.AddScoped<RenderCommandHandler>();
                                 services
                                     .AddScoped<IDeploymentConfigurationPathProvider, DeploymentConfigurationPathProvider
                                     >();
@@ -124,7 +126,7 @@ namespace HelmPreprocessor
                                 services.AddSingleton<IDeploymentRendererFactory, DeploymentRendererFactory>();
                                 
                                 services.AddOptions<RenderArguments>().BindCommandLine();
-                                services.AddOptions<GlobalArguments>().BindCommandLine();
+                                services.AddOptions<GeneralArguments>().BindCommandLine();
 
                             });
                     }

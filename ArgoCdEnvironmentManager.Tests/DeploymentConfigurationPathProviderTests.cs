@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
+using HelmPreprocessor.Commands.Arguments;
 using HelmPreprocessor.Configuration;
 using HelmPreprocessor.Services;
 using Microsoft.Extensions.Options;

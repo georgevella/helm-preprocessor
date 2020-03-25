@@ -7,9 +7,9 @@ using Microsoft.Extensions.Hosting;
 namespace HelmPreprocessor.Commands
 {
     public class BaseCommand<TCommandHandler> : Command
-        where TCommandHandler : ICommandHandlerService
+        where TCommandHandler : ICommandHandler
     {
-        public BaseCommand(string name, string description = null) : base(name, description)
+        public BaseCommand(string name, string? description = null) : base(name, description)
         {
             Handler = CommandHandler.Create<IHost>( 
                 async host =>

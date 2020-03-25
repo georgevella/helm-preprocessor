@@ -1,21 +1,19 @@
 ﻿using System;
-using System.CommandLine;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using HelmPreprocessor.Commands;
 using HelmPreprocessor.Configuration;
+using HelmPreprocessor.Services;
 using Microsoft.Extensions.Options;
 
-namespace HelmPreprocessor.Services
+namespace HelmPreprocessor.Commands.Handlers
 {
-    public class ListConfigurationsCommandHandlerService : ICommandHandlerService
+    public class ListConfigurationsCommandHandler : ICommandHandler
     {
         private readonly IOptions<RenderConfiguration> _renderConfiguration;
         private readonly IDeploymentConfigurationPathProvider _deploymentConfigurationPathProvider;
         private readonly IDeploymentConfigurationProvider _deploymentConfigurationProvider;
 
-        public ListConfigurationsCommandHandlerService(
+        public ListConfigurationsCommandHandler(
             IOptions<RenderConfiguration> renderConfiguration,
             IDeploymentConfigurationPathProvider deploymentConfigurationPathProvider,
             IDeploymentConfigurationProvider deploymentConfigurationProvider

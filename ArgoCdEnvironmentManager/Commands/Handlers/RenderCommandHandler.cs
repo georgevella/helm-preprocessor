@@ -1,36 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using HelmPreprocessor.Commands;
+using HelmPreprocessor.Commands.Arguments;
 using HelmPreprocessor.Configuration;
+using HelmPreprocessor.Services;
 using HelmPreprocessor.Services.DeploymentRenderers;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace HelmPreprocessor.Services
+namespace HelmPreprocessor.Commands.Handlers
 {
-    public class RenderCommandHandlerService : ICommandHandlerService
+    public class RenderCommandHandler : ICommandHandler
     {
         private readonly IDeploymentConfigurationPathProvider _deploymentConfigurationPathProvider;
         private readonly IDeploymentConfigurationProvider _deploymentConfigurationProvider;
         private readonly IOptions<ArgoCdEnvironment> _argoCdEnvironment;
         private readonly IOptions<RenderConfiguration> _renderConfiguration;
         private readonly IOptions<RenderArguments> _renderArguments;
-        private readonly IOptions<GlobalArguments> _globalArguments;
+        private readonly IOptions<GeneralArguments> _globalArguments;
         private readonly ISecretsHandler _secretsHandler;
         private readonly IDeploymentRendererFactory _deploymentRendererFactory;
 
-        public RenderCommandHandlerService(
+        public RenderCommandHandler(
             IDeploymentConfigurationPathProvider deploymentConfigurationPathProvider,
             IDeploymentConfigurationProvider deploymentConfigurationProvider,
             IOptions<ArgoCdEnvironment> argoCdEnvironment,
             IOptions<RenderConfiguration> renderConfiguration,
             IOptions<RenderArguments> renderArguments,
-            IOptions<GlobalArguments> globalArguments,
+            IOptions<GeneralArguments> globalArguments,
             ISecretsHandler secretsHandler,
             IDeploymentRendererFactory deploymentRendererFactory
         )
@@ -53,21 +52,22 @@ namespace HelmPreprocessor.Services
             if (!_deploymentConfigurationProvider.GetDeploymentConfiguration(out var deploymentConfiguration))
                 return Task.CompletedTask;
 
-            var servicesConfiguration = deploymentConfiguration.Services;
+            var servicesConfiguration = deploymentConfiguration!.Services;
+            var configurationRootDirectory = (DirectoryInfo) configurationRoot;
 
             // start building list of helm value files
             var helmValueFiles = new List<FileInfo>
             {
-                new FileInfo(Path.Combine(configurationRoot.FullName, "values.yaml")),
-                new FileInfo(Path.Combine(configurationRoot.FullName, "app-versions.yaml")),
-                new FileInfo(Path.Combine(configurationRoot.FullName, "secrets.yaml"))
+                new FileInfo(Path.Combine(configurationRootDirectory.FullName, "values.yaml")),
+                new FileInfo(Path.Combine(configurationRootDirectory.FullName, "app-versions.yaml")),
+                new FileInfo(Path.Combine(configurationRootDirectory.FullName, "secrets.yaml"))
             };
             
             foreach (var serviceMap in servicesConfiguration)
             {
                 helmValueFiles.AddRange(
                     from s in new[] {"values.yaml", "secrets.yaml", "infra.yaml"}
-                    select new FileInfo(Path.Combine(configurationRoot.FullName, serviceMap.Key, s)) into fileInfo
+                    select new FileInfo(Path.Combine(configurationRootDirectory.FullName, serviceMap.Key, s)) into fileInfo
                     select fileInfo
                 );
             }
@@ -83,7 +83,7 @@ namespace HelmPreprocessor.Services
             
             deploymentRenderer.Initialize(deploymentContext);
 
-            GenerateHelmTemplate(deploymentRenderer, helmValueFiles, deploymentConfiguration);
+            GenerateHelmTemplate(deploymentRenderer, helmValueFiles, deploymentConfiguration!);
 
             return Task.CompletedTask;
         }
@@ -109,23 +109,31 @@ namespace HelmPreprocessor.Services
             helmValueFiles
                 .ForEach(x =>
                 {
-                    if (!x.Exists) return;
-
-                    if (x.Name.Equals(deploymentConfiguration.Secrets.Filename))
+                    if (!x.Exists)
                     {
-                        var decodedFile = _secretsHandler.Decode(x);
-                        helmContext.ValueFiles.Add(decodedFile.FullName);
+                        if (_globalArguments.Value.Verbose)
+                        {
+                            Console.WriteLine($"File '{x.FullName}' is missing ...");
+                        }
                     }
                     else
                     {
-                        helmContext.ValueFiles.Add(x.FullName);
+                        if (x.Name.Equals(deploymentConfiguration.Secrets.Filename))
+                        {
+                            var decodedFile = _secretsHandler.Decode(x);
+                            helmContext.ValueFiles.Add(decodedFile.FullName);
+                        }
+                        else
+                        {
+                            helmContext.ValueFiles.Add(x.FullName);
+                        }
                     }
                 });
             
             deploymentRenderer.Render(helmContext);
         }
 
-        private string GenerateNamespace()
+        private string? GenerateNamespace()
         {
             if (!string.IsNullOrEmpty(_argoCdEnvironment.Value.Namespace))
             {

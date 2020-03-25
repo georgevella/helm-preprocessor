@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using HelmPreprocessor.Commands.Arguments;
 using HelmPreprocessor.Configuration;
+using HelmPreprocessor.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace HelmPreprocessor.Services.DeploymentRenderers
@@ -13,13 +15,13 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
         private readonly IOptions<ArgoCdEnvironment> _argoCdEnvironment;
         private readonly IOptions<RenderConfiguration> _renderConfiguration;
         private readonly IOptions<RenderArguments> _renderArguments;
-        private readonly IOptions<GlobalArguments> _globalArguments;
+        private readonly IOptions<GeneralArguments> _globalArguments;
 
         protected BaseHelmDeploymentRenderer(
             IOptions<ArgoCdEnvironment> argoCdEnvironment,
             IOptions<RenderConfiguration> renderConfiguration,
             IOptions<RenderArguments> renderArguments,
-            IOptions<GlobalArguments> globalArguments
+            IOptions<GeneralArguments> globalArguments
         )
         {
             _argoCdEnvironment = argoCdEnvironment;
@@ -30,10 +32,12 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
         
         protected void FetchHelmDependencies(DeploymentRendererContext context)
         {
-            var requirementsLockFile = Path.Combine(
-                context.WorkingDirectory, 
-                "requirements.lock"
+            var requirementsLockFile = context.WorkingDirectory.IsNotNullOrEmpty(s => Path.Combine(
+                    s,
+                    "requirements.lock"
+                )
             );
+             
             if (File.Exists(requirementsLockFile))
             {
                 File.Delete(requirementsLockFile);
@@ -62,13 +66,13 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
     
     class Helm2DeploymentRenderer : BaseHelmDeploymentRenderer
     {
-        private readonly IOptions<GlobalArguments> _globalArguments;
+        private readonly IOptions<GeneralArguments> _globalArguments;
 
         public Helm2DeploymentRenderer(
             IOptions<ArgoCdEnvironment> argoCdEnvironment,
             IOptions<RenderConfiguration> renderConfiguration,
             IOptions<RenderArguments> renderArguments,
-            IOptions<GlobalArguments> globalArguments
+            IOptions<GeneralArguments> globalArguments
         ) : base(argoCdEnvironment, renderConfiguration, renderArguments, globalArguments)
         {
             _globalArguments = globalArguments;
@@ -116,13 +120,13 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
     
     class Helm3DeploymentRenderer : BaseHelmDeploymentRenderer
     {
-        private readonly IOptions<GlobalArguments> _globalArguments;
+        private readonly IOptions<GeneralArguments> _globalArguments;
 
         public Helm3DeploymentRenderer(
             IOptions<ArgoCdEnvironment> argoCdEnvironment,
             IOptions<RenderConfiguration> renderConfiguration,
             IOptions<RenderArguments> renderArguments,
-            IOptions<GlobalArguments> globalArguments
+            IOptions<GeneralArguments> globalArguments
         ) : base(argoCdEnvironment, renderConfiguration, renderArguments, globalArguments)
         {
             _globalArguments = globalArguments;

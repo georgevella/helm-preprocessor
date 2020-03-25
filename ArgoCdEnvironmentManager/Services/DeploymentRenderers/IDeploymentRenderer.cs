@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using HelmPreprocessor.Configuration;
-using Microsoft.Extensions.Options;
+﻿using System.Collections.Generic;
 
-namespace HelmPreprocessor.Services
+namespace HelmPreprocessor.Services.DeploymentRenderers
 {
     public interface IDeploymentRenderer
     {
@@ -15,11 +11,11 @@ namespace HelmPreprocessor.Services
 
     public class DeploymentRendererContext
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
         
-        public string Namespace { get; set; }
+        public string? Namespace { get; set; }
         
-        public string WorkingDirectory { get; set; }
+        public string? WorkingDirectory { get; set; }
         
         public string? Cluster { get; set; }
         public string? Environment { get; set; }

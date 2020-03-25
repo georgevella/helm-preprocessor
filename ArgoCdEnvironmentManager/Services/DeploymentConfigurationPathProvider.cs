@@ -1,15 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection.Metadata.Ecma335;
+using System.Runtime.CompilerServices;
+using HelmPreprocessor.Commands.Arguments;
 using HelmPreprocessor.Configuration;
+using HelmPreprocessor.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace HelmPreprocessor.Services
 {
     public interface IDeploymentConfigurationPathProvider
     {
-        bool TryGetConfigurationRoot(out DirectoryInfo configurationRootDirectory);
+        bool TryGetConfigurationRoot(out ConfigurationRoot configurationRootDirectory);
         DirectoryInfo GetDeploymentRepository();
+    }
+
+    public class ConfigurationRoot
+    {
+        public static implicit operator DirectoryInfo(ConfigurationRoot configurationRoot) => 
+            !configurationRoot.IsSet ? throw new InvalidCastException() : configurationRoot.DirectoryInfo!;
+        
+        public static implicit operator ConfigurationRoot(DirectoryInfo directoryInfo) => 
+            new ConfigurationRoot(directoryInfo);
+
+        private ConfigurationRoot(DirectoryInfo directoryInfo) => 
+            (DirectoryInfo, IsSet) = (directoryInfo, true);
+
+        public ConfigurationRoot() => 
+            (DirectoryInfo, IsSet) = (null, false);
+        
+
+        private DirectoryInfo? DirectoryInfo { get; }
+
+        private bool IsSet { get; }
+        public string FullName => IsSet ? DirectoryInfo!.FullName : throw new InvalidOperationException();
     }
     
     public class DeploymentConfigurationPathProvider : IDeploymentConfigurationPathProvider
@@ -31,16 +56,16 @@ namespace HelmPreprocessor.Services
             return new DirectoryInfo(_renderConfiguration.Value.Repository ?? Environment.CurrentDirectory);
         }
         
-        public bool TryGetConfigurationRoot(out DirectoryInfo configurationRootDirectory)
+        public bool TryGetConfigurationRoot(out ConfigurationRoot configurationRootDirectory)
         {
             var renderConfiguration = _renderConfiguration.Value;
             var renderArguments = _renderArguments.Value;
 
 
-            string GetCluster() => renderArguments.Cluster ?? renderConfiguration.Cluster;
-            string GetEnvironment() => renderArguments.Environment ?? renderConfiguration.Environment;
-            string GetVertical() => renderArguments.Vertical ?? renderConfiguration.Vertical;
-            string GetSubVertical() => renderArguments.SubVertical ?? renderConfiguration.SubVertical;
+            string? GetCluster() => renderArguments.Cluster ?? renderConfiguration.Cluster;
+            string? GetEnvironment() => renderArguments.Environment ?? renderConfiguration.Environment;
+            string? GetVertical() => renderArguments.Vertical ?? renderConfiguration.Vertical;
+            string? GetSubVertical() => renderArguments.SubVertical ?? renderConfiguration.SubVertical;
 
 
             var configurationRoot = renderConfiguration.Configuration;
@@ -48,29 +73,25 @@ namespace HelmPreprocessor.Services
             if (string.IsNullOrWhiteSpace(configurationRoot))
             {
                 var configurationRootValuesAvailable =
-                    !string.IsNullOrWhiteSpace(renderArguments.Cluster ?? renderConfiguration.Cluster) &&
-                    !string.IsNullOrWhiteSpace(renderArguments.Environment ?? renderConfiguration.Environment) &&
-                    !string.IsNullOrWhiteSpace(renderArguments.Vertical ?? renderConfiguration.Vertical) &&
-                    !string.IsNullOrWhiteSpace(renderArguments.SubVertical ?? renderConfiguration.SubVertical);
+                    !string.IsNullOrWhiteSpace(GetCluster()) &&
+                    !string.IsNullOrWhiteSpace(GetEnvironment()) &&
+                    !string.IsNullOrWhiteSpace(GetVertical()) &&
+                    !string.IsNullOrWhiteSpace(GetSubVertical());
 
-                var pathParts = new List<string>();
-                pathParts.Add(GetDeploymentRepository().FullName);
-                pathParts.Add("config");
-
-                if (!string.IsNullOrWhiteSpace(GetVertical()))
+                var pathParts = new List<string>
                 {
-                    pathParts.Add(GetVertical());
-                }
+                    GetDeploymentRepository().FullName, 
+                    "config"
+                };
 
+                GetVertical().IsNotNullOrWhitespace(s => pathParts.Add(s));
+                
                 if (!string.IsNullOrWhiteSpace(GetEnvironment()) && !string.IsNullOrWhiteSpace(GetCluster()))
                 {
                     pathParts.Add($"{GetCluster()}-{GetEnvironment()}");
                 }
-
-                if (!string.IsNullOrWhiteSpace(GetSubVertical()))
-                {
-                    pathParts.Add(GetSubVertical());
-                }
+                
+                GetSubVertical().IsNotNullOrWhitespace(s => pathParts.Add(s));
 
                 configurationRoot = Path.Combine(pathParts.ToArray());
             }
@@ -80,8 +101,8 @@ namespace HelmPreprocessor.Services
                 configurationRootDirectory = new DirectoryInfo(configurationRoot);
                 return true;
             }
-
-            configurationRootDirectory = null;
+            
+            configurationRootDirectory = new ConfigurationRoot();
             return false;
         }
     }
