@@ -76,5 +76,14 @@ namespace HelmPreprocessor.Configuration
     public class ServiceConfiguration
     {
         public string? Runtime { get; set; }
+        
+        public ServiceImageConfiguration Image { get; } = new ServiceImageConfiguration();
+    }
+
+    public class ServiceImageConfiguration
+    {
+        public string? Repository { get; set; }
+        
+        public string? Tag { get; set; }
     }
 }
