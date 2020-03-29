@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using HelmPreprocessor.Commands.Arguments;
@@ -55,6 +57,31 @@ namespace HelmPreprocessor.Commands.Handlers
             var servicesConfiguration = deploymentConfiguration!.Services;
             var configurationRootDirectory = (DirectoryInfo) configurationRoot;
 
+            var deploymentRenderer = _deploymentRendererFactory.GetDeploymentRenderer(_renderArguments.Value.Renderer);
+            var deploymentContext = GenerateDeploymentRendererContext(configurationRootDirectory, deploymentConfiguration!);
+            
+            deploymentRenderer.Initialize(deploymentContext);
+            deploymentRenderer.Render(deploymentContext);
+
+            return Task.CompletedTask;
+        }
+
+        private DeploymentRendererContext GenerateDeploymentRendererContext(
+            DirectoryInfo configurationRootDirectory, 
+            DeploymentConfiguration deploymentConfiguration
+            )
+        {
+            return deploymentConfiguration.Renderer.Type switch
+            {
+                RendererType.Helm => GenerateHelmDeploymentRendererContext(configurationRootDirectory,
+                    deploymentConfiguration),
+                _ => throw new InvalidOperationException()
+            };
+        }
+
+        private DeploymentRendererContext GenerateHelmDeploymentRendererContext(
+            DirectoryInfo configurationRootDirectory, DeploymentConfiguration deploymentConfiguration)
+        {
             // start building list of helm value files
             var helmValueFiles = new List<FileInfo>
             {
@@ -63,7 +90,7 @@ namespace HelmPreprocessor.Commands.Handlers
                 new FileInfo(Path.Combine(configurationRootDirectory.FullName, "secrets.yaml"))
             };
             
-            foreach (var serviceMap in servicesConfiguration)
+            foreach (var serviceMap in deploymentConfiguration.Services)
             {
                 helmValueFiles.AddRange(
                     from s in new[] {"values.yaml", "secrets.yaml", "infra.yaml"}
@@ -71,40 +98,51 @@ namespace HelmPreprocessor.Commands.Handlers
                     select fileInfo
                 );
             }
-
-            var deploymentRenderer = _deploymentRendererFactory.GetDeploymentRenderer(_renderArguments.Value.Renderer);
-
-            var deploymentContext = new HelmRendererContext()
-            {
-                Name = GenerateName(),
-                Namespace = GenerateNamespace(),
-                WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName
-            };
             
-            deploymentRenderer.Initialize(deploymentContext);
-
-            GenerateHelmTemplate(deploymentRenderer, helmValueFiles, deploymentConfiguration!);
-
-            return Task.CompletedTask;
-        }
-
-        private void GenerateHelmTemplate(
-            IDeploymentRenderer deploymentRenderer, 
-            List<FileInfo> helmValueFiles, 
-            DeploymentConfiguration deploymentConfiguration
-            )
-        {
-            var helmContext = new HelmRendererContext()
+            HelmChart? chart = null;
+            if (deploymentConfiguration.Renderer.HelmChart?.Name != null && deploymentConfiguration.Renderer.HelmChart.Repository.Url != null )
             {
-                Name = GenerateName(),
-                Namespace = GenerateNamespace(),
-                WorkingDirectory = _deploymentConfigurationPathProvider.GetDeploymentRepository().FullName,
+                NetworkCredential? credential = null;
                 
-                Cluster = _renderArguments.Value.Cluster ?? _renderConfiguration.Value.Cluster,
-                Environment = _renderArguments.Value.Environment ?? _renderConfiguration.Value.Environment,
-                Vertical = _renderArguments.Value.Vertical ?? _renderConfiguration.Value.Vertical,
-                SubVertical = _renderArguments.Value.SubVertical ?? _renderConfiguration.Value.SubVertical
-            };
+                if (deploymentConfiguration.Renderer.HelmChart.Repository.Username != null &&
+                    deploymentConfiguration.Renderer.HelmChart.Repository.Password != null)
+                {
+                    credential = new NetworkCredential(
+                        deploymentConfiguration.Renderer.HelmChart.Repository.Username,
+                        deploymentConfiguration.Renderer.HelmChart.Repository.Password
+                        );
+                }
+
+                var repository = credential switch
+                {
+                    null => new HelmChartRepository(deploymentConfiguration.Renderer.HelmChart.Repository.Url),
+                    _ => new UsernamePasswordAuthHelmChartRepository(
+                        deploymentConfiguration.Renderer.HelmChart.Repository.Url,
+                        credential
+                    )
+                };
+                
+                chart = new HelmChart(
+                    deploymentConfiguration.Renderer.HelmChart.Name,
+                    repository
+                );
+            }
+
+            var deploymentRendererContext = new HelmRendererContext(
+                GenerateName(),
+                GenerateNamespace(),
+                _deploymentConfigurationPathProvider.GetDeploymentRepository(),
+                // ReSharper disable once ArgumentsStyleOther
+                chart: chart,
+                // ReSharper disable once ArgumentsStyleOther
+                cluster: _renderArguments.Value.Cluster ?? _renderConfiguration.Value.Cluster,
+                // ReSharper disable once ArgumentsStyleOther
+                environment: _renderArguments.Value.Environment ?? _renderConfiguration.Value.Environment,
+                // ReSharper disable once ArgumentsStyleOther
+                vertical: _renderArguments.Value.Vertical ?? _renderConfiguration.Value.Vertical,
+                // ReSharper disable once ArgumentsStyleOther
+                subVertical: _renderArguments.Value.SubVertical ?? _renderConfiguration.Value.SubVertical
+            );
             
             helmValueFiles
                 .ForEach(x =>
@@ -118,22 +156,22 @@ namespace HelmPreprocessor.Commands.Handlers
                     }
                     else
                     {
-                        if (x.Name.Equals(deploymentConfiguration.Secrets.Filename))
+                        if (x.Name.Equals(deploymentConfiguration.Renderer.Secrets.Filename))
                         {
                             var decodedFile = _secretsHandler.Decode(x);
-                            helmContext.ValueFiles.Add(decodedFile.FullName);
+                            deploymentRendererContext.ValueFiles.Add(decodedFile.FullName);
                         }
                         else
                         {
-                            helmContext.ValueFiles.Add(x.FullName);
+                            deploymentRendererContext.ValueFiles.Add(x.FullName);
                         }
                     }
                 });
-            
-            deploymentRenderer.Render(helmContext);
+
+            return deploymentRendererContext;
         }
 
-        private string? GenerateNamespace()
+        private string GenerateNamespace()
         {
             if (!string.IsNullOrEmpty(_argoCdEnvironment.Value.Namespace))
             {
@@ -145,7 +183,7 @@ namespace HelmPreprocessor.Commands.Handlers
                 return _renderArguments.Value.Namespace;
             }
 
-            return null;
+            throw new InvalidOperationException("A namespace needs to be specified to be able to render the environment properly.");
         }
         
         private string GenerateName()

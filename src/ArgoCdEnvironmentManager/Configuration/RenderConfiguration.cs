@@ -3,7 +3,7 @@
 namespace HelmPreprocessor.Configuration
 {
     /// <summary>
-    ///     Captures values supplied to the service via Environment Variables.
+    ///     Captures values supplied to the service via Environment Variables (generally HELM_*)
     /// </summary>
     public class RenderConfiguration : RenderArguments
     {

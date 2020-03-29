@@ -7,9 +7,39 @@ namespace HelmPreprocessor.Configuration
     /// </summary>
     public class DeploymentConfiguration
     {
-        public SecretsConfiguration Secrets { get; set; } = new SecretsConfiguration();
-        public ServicesConfiguration Services { get; set; } = new ServicesConfiguration();
-    } 
+        public RendererSettings Renderer { get; } = new RendererSettings();
+        public ServicesConfiguration Services { get; } = new ServicesConfiguration();
+    }
+
+    public class RendererSettings
+    {
+        public RendererType Type { get; set; } = RendererType.Helm;
+        
+        public SecretsConfiguration Secrets { get; } = new SecretsConfiguration();
+        
+        public HelmChartSettings HelmChart { get; } = new HelmChartSettings();
+    }
+
+    public enum RendererType
+    {
+        Helm
+    }
+
+    public class HelmChartSettings
+    {
+        public string? Name { get; set; }
+
+        public ChartRepositorySettings Repository { get; } = new ChartRepositorySettings();
+    }
+
+    public class ChartRepositorySettings
+    {
+        public string? Url { get; set; }
+        
+        public string? Username { get; set; }
+        
+        public string? Password { get; set; }
+    }
 
     /// <summary>
     ///     Describes how secrets are managed within a deployment configuration.

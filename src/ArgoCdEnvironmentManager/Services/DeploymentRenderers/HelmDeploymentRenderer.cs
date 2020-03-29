@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
 using HelmPreprocessor.Commands.Arguments;
@@ -32,23 +30,22 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
         
         protected void FetchHelmDependencies(DeploymentRendererContext context)
         {
-            var requirementsLockFile = context.WorkingDirectory.IsNotNullOrEmpty(s => Path.Combine(
-                    s,
-                    "requirements.lock"
-                )
-            );
+            var requirementsLockFile = context.WorkingDirectory.GetFilePath("requirements.lock");
              
-            if (File.Exists(requirementsLockFile))
+            if (requirementsLockFile.Exists)
             {
-                File.Delete(requirementsLockFile);
+                requirementsLockFile.Delete();
             }
+
+            var processStartInfo = new ProcessStartInfo("helm")
+            {
+                WorkingDirectory = context.WorkingDirectory.FullName,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true
+            };
             
-            var processStartInfo = new ProcessStartInfo("helm");
             processStartInfo.ArgumentList.Add("dependency");
             processStartInfo.ArgumentList.Add("build");
-            processStartInfo.WorkingDirectory = context.WorkingDirectory;
-            processStartInfo.RedirectStandardError = 
-                processStartInfo.RedirectStandardOutput = true;
 
             var process = new Process()
             {
@@ -61,137 +58,9 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
         }
         
         public abstract void Initialize(DeploymentRendererContext context);
+
+        public abstract void Fetch(DeploymentRendererContext context);
+        
         public abstract void Render(DeploymentRendererContext context);
-    }
-    
-    class Helm2DeploymentRenderer : BaseHelmDeploymentRenderer
-    {
-        private readonly IOptions<GeneralArguments> _globalArguments;
-
-        public Helm2DeploymentRenderer(
-            IOptions<ArgoCdEnvironment> argoCdEnvironment,
-            IOptions<RenderConfiguration> renderConfiguration,
-            IOptions<RenderArguments> renderArguments,
-            IOptions<GeneralArguments> globalArguments
-        ) : base(argoCdEnvironment, renderConfiguration, renderArguments, globalArguments)
-        {
-            _globalArguments = globalArguments;
-        }
-        
-        
-        public override void Initialize(DeploymentRendererContext context)
-        {
-            FetchHelmDependencies(context);
-        }
-
-        public override void Render(DeploymentRendererContext context)
-        {
-            var helmContext = (HelmRendererContext) context;
-            
-            var processStartInfo = new ProcessStartInfo("helm");
-            processStartInfo.ArgumentList.Add("template");
-            processStartInfo.ArgumentList.Add(".");
-            processStartInfo.WorkingDirectory = context.WorkingDirectory;
-            
-            helmContext.ValueFiles.ForEach(x =>
-            {
-                processStartInfo.ArgumentList.Add("-f");
-                processStartInfo.ArgumentList.Add( x );
-            });
-            
-            processStartInfo.ArgumentList.Add("--name");
-            processStartInfo.ArgumentList.Add(context.Name);
-            
-            var namespaceName = context.Namespace;
-            if (!string.IsNullOrEmpty(namespaceName))
-            {
-                processStartInfo.ArgumentList.Add("--namespace");
-                processStartInfo.ArgumentList.Add(namespaceName);
-            }
-
-            if (_globalArguments.Value.Verbose)
-            {
-                Console.WriteLine($"{processStartInfo.FileName} {string.Join(" ", processStartInfo.ArgumentList)}");
-            }
-
-            Process.Start(processStartInfo)?.WaitForExit();
-        }
-    }
-    
-    class Helm3DeploymentRenderer : BaseHelmDeploymentRenderer
-    {
-        private readonly IOptions<GeneralArguments> _globalArguments;
-
-        public Helm3DeploymentRenderer(
-            IOptions<ArgoCdEnvironment> argoCdEnvironment,
-            IOptions<RenderConfiguration> renderConfiguration,
-            IOptions<RenderArguments> renderArguments,
-            IOptions<GeneralArguments> globalArguments
-        ) : base(argoCdEnvironment, renderConfiguration, renderArguments, globalArguments)
-        {
-            _globalArguments = globalArguments;
-        }
-        
-        
-        public override void Initialize(DeploymentRendererContext context)
-        {
-            FetchHelmDependencies(context);
-        }
-
-        public override void Render(DeploymentRendererContext context)
-        {
-            var helmContext = (HelmRendererContext) context;
-            
-            var processStartInfo = new ProcessStartInfo("helm3");
-            processStartInfo.ArgumentList.Add("template");
-            processStartInfo.ArgumentList.Add(context.Name);
-            processStartInfo.ArgumentList.Add(".");
-            processStartInfo.WorkingDirectory = context.WorkingDirectory;
-            
-            helmContext.ValueFiles.ForEach(x =>
-            {
-                processStartInfo.ArgumentList.Add("-f");
-                processStartInfo.ArgumentList.Add( x );
-            });
-
-            var namespaceName = context.Namespace;
-            if (!string.IsNullOrEmpty(namespaceName))
-            {
-                processStartInfo.ArgumentList.Add("--namespace");
-                processStartInfo.ArgumentList.Add(namespaceName);
-            }
-
-            var environmentalVariables = new List<string>();
-
-            if (context.Cluster != null)
-            {
-                environmentalVariables.Add($"cluster={context.Cluster}");
-            }
-            
-            if (context.Environment != null)
-            {
-                environmentalVariables.Add($"environment={context.Environment}");
-            }
-            
-            if (context.SubVertical != null)
-            {
-                environmentalVariables.Add($"subvertical={context.SubVertical}");
-            }
-            
-            if (context.Vertical != null)
-            {
-                environmentalVariables.Add($"vertical={context.Vertical}");
-            }
-            
-            processStartInfo.ArgumentList.Add("--set-string");
-            processStartInfo.ArgumentList.Add(string.Join(",", environmentalVariables));
-
-            if (_globalArguments.Value.Verbose)
-            {
-                Console.WriteLine($"{processStartInfo.FileName} {string.Join(" ", processStartInfo.ArgumentList)}");
-            }
-
-            Process.Start(processStartInfo)?.WaitForExit();
-        }
     }
 }

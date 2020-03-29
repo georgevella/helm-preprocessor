@@ -39,7 +39,7 @@ namespace HelmPreprocessor
                     {
                         Argument = new Argument<string>()
                     },
-                    new Option(new[] {"-s", "--subvertical"}, "Name of the subvertical (if used).")
+                    new Option(new[] {"-s", "--subvertical"}, "Name of the sub-vertical (if used).")
                     {
                         Argument = new Argument<string>()
                     },
@@ -51,7 +51,6 @@ namespace HelmPreprocessor
                     {
                         Argument = new Argument<string>()
                     },
-                    
                     new Option(new[] {"--renderer"}, "Renderer to use to generate the chart.")
                     {
                         Argument = new Argument<string>()

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -22,8 +23,14 @@ namespace HelmPreprocessor.Services
                 "sops", 
                 $"-d -i {targetFileInfo.FullName}"
             );
-            
-            Process.Start(psi)?.WaitForExit();
+
+            var process = Process.Start(psi);
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException($"SopsSecretsHandler failed to decrypt the secret files (exitCode: {process.ExitCode}).");
+            }
             
             return targetFileInfo;
         }
