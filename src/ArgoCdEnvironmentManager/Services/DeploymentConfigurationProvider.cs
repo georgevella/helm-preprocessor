@@ -7,7 +7,7 @@ namespace HelmPreprocessor.Services
 {
     public interface IDeploymentConfigurationProvider
     {
-        bool GetDeploymentConfiguration(out DeploymentConfiguration? deploymentConfiguration);
+        bool GetDeploymentConfiguration(out DeploymentConfiguration deploymentConfiguration);
     }
     
     public class DeploymentConfigurationProvider : IDeploymentConfigurationProvider
@@ -21,12 +21,13 @@ namespace HelmPreprocessor.Services
             _deploymentConfigurationPathProvider = deploymentConfigurationPathProvider;
         }
 
-        public bool GetDeploymentConfiguration(out DeploymentConfiguration? deploymentConfiguration)
+        public bool GetDeploymentConfiguration(out DeploymentConfiguration deploymentConfiguration)
         {
-            deploymentConfiguration = default(DeploymentConfiguration);
-            
             if (!_deploymentConfigurationPathProvider.TryGetConfigurationRoot(out var configurationRoot))
+            {
+                deploymentConfiguration = DeploymentConfiguration.Empty;
                 return false;
+            }
             
             // load deployment configuration from target location
             var rendererConfigurationBuilder = new ConfigurationBuilder();

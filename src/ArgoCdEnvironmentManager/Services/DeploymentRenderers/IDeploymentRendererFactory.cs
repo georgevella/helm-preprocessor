@@ -1,43 +1,65 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using HelmPreprocessor.Commands.Arguments;
+using HelmPreprocessor.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace HelmPreprocessor.Services.DeploymentRenderers
 {
     public interface IDeploymentRendererFactory
     {
-        IDeploymentRenderer GetDeploymentRenderer(string name);
+        IDeploymentRenderer GetDeploymentRenderer();
     }
 
     class DeploymentRendererFactory : IDeploymentRendererFactory
     {
-        private readonly Dictionary<string, IDeploymentRenderer> _deploymentRendererMap;
+        private readonly IServiceProvider _serviceProvider;
 
-        public DeploymentRendererFactory(IEnumerable<IDeploymentRenderer> deploymentRenderers)
+        private readonly IOptions<RenderArguments> _renderArguments;
+        private readonly IDeploymentConfigurationProvider _deploymentConfigurationProvider;
+        private readonly Dictionary<string, RendererType> _deploymentRendererTypeMap;
+
+        public DeploymentRendererFactory(
+            IServiceProvider serviceProvider,
+            IOptions<RenderArguments> renderArguments,
+            IDeploymentConfigurationProvider deploymentConfigurationProvider
+            )
         {
-            _deploymentRendererMap = deploymentRenderers
-                .Select(x => new
-                {
-                    name = GenerateNameFromType(x.GetType()),
-                    instance = x
-                })
-                .ToDictionary(x => x.name, x => x.instance);
+            _serviceProvider = serviceProvider;
+            _renderArguments = renderArguments;
+            _deploymentConfigurationProvider = deploymentConfigurationProvider;
+
+            var values = (RendererType[])Enum.GetValues(typeof(RendererType)) ?? new RendererType[] {};
+            _deploymentRendererTypeMap = values!
+                .ToDictionary(
+                    x => Enum.GetName(typeof(RendererType), x)?.ToLower() ?? x.ToString(),
+                    x => (RendererType) x
+                );
         }
-
-        private string GenerateNameFromType(Type type)
+        
+        public IDeploymentRenderer GetDeploymentRenderer()
         {
-            var name = type.Name.ToLower();
-            if (name.EndsWith("DeploymentRenderer".ToLower()))
+            // default to Helm2
+            var rendererType = RendererType.Helm2;
+
+            if (!string.IsNullOrEmpty(_renderArguments.Value.Renderer))
             {
-                name = name.Substring(0, name.IndexOf("DeploymentRenderer".ToLower(), StringComparison.Ordinal));
+                // renderer supplied from command line (overrides the one in config)
+                rendererType = _deploymentRendererTypeMap[_renderArguments.Value.Renderer.ToLower()];
+            }
+            else if (_deploymentConfigurationProvider.GetDeploymentConfiguration(out var deploymentConfiguration))
+            {
+                rendererType = deploymentConfiguration.Renderer.Type;
             }
 
-            return name;
-        }
-
-        public IDeploymentRenderer GetDeploymentRenderer(string name)
-        {
-            return _deploymentRendererMap[name];
+            return rendererType switch
+            {
+                RendererType.Helm2 => _serviceProvider.GetService<Helm2DeploymentRenderer>(),
+                RendererType.Helm3 => _serviceProvider.GetService<Helm3DeploymentRenderer>(),
+                _ => throw new InvalidOperationException("An unsupported deployment render was provided.")
+            };
         }
     }
 }

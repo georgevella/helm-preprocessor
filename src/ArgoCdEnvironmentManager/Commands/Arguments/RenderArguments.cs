@@ -17,6 +17,6 @@ namespace HelmPreprocessor.Commands.Arguments
         
         public string? Name { get; set; }
 
-        public string Renderer { get; set; } = "helm2";
+        public string? Renderer { get; set; }
     }
 }

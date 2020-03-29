@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using HelmPreprocessor.Services.DeploymentRenderers;
 
 namespace HelmPreprocessor.Configuration
 {
@@ -7,13 +8,17 @@ namespace HelmPreprocessor.Configuration
     /// </summary>
     public class DeploymentConfiguration
     {
+        public static DeploymentConfiguration Empty { get; } = new DeploymentConfiguration();
+        
+        
         public RendererSettings Renderer { get; } = new RendererSettings();
+        // ReSharper disable once CollectionNeverUpdated.Global
         public ServicesConfiguration Services { get; } = new ServicesConfiguration();
     }
 
     public class RendererSettings
     {
-        public RendererType Type { get; set; } = RendererType.Helm;
+        public RendererType Type { get; set; } = RendererType.Helm2;
         
         public SecretsConfiguration Secrets { get; } = new SecretsConfiguration();
         
@@ -22,7 +27,8 @@ namespace HelmPreprocessor.Configuration
 
     public enum RendererType
     {
-        Helm
+        Helm2,
+        Helm3,
     }
 
     public class HelmChartSettings
