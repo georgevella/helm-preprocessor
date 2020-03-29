@@ -11,6 +11,7 @@ using HelmPreprocessor.Services;
 using HelmPreprocessor.Services.DeploymentRenderers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -29,34 +30,80 @@ namespace HelmPreprocessor
                 {
                     new Option(new[] {"-e", "--environment"}, "Name of the environment.")
                     {
-                        Argument = new Argument<string>()
+                        Argument = new Argument<string>(),
+                        Required = false
                     },
                     new Option(new[] {"-v", "--vertical"}, "Name of the vertical.")
                     {
-                        Argument = new Argument<string>()
+                        Argument = new Argument<string>(),
+                        Required = false
                     },
                     new Option(new[] {"-c", "--cluster"}, "Name of the cluster.")
                     {
-                        Argument = new Argument<string>()
+                        Argument = new Argument<string>(),
+                        Required = false
                     },
                     new Option(new[] {"-s", "--subvertical"}, "Name of the sub-vertical (if used).")
                     {
-                        Argument = new Argument<string>()
+                        Argument = new Argument<string>(),
+                        Required = false
                     },
                     new Option(new[] {"-n", "--namespace"}, "Name of namespace.")
                     {
-                        Argument = new Argument<string>()
+                        Argument = new Argument<string>(),
+                        Required = false
                     },
                     new Option(new[] {"--name"}, "Name of the release.")
                     {
-                        Argument = new Argument<string>()
+                        Argument = new Argument<string>(),
+                        Required = false
                     },
                     new Option(new[] {"--renderer"}, "Renderer to use to generate the chart.")
                     {
-                        Argument = new Argument<string>()
-                        {
-                            
-                        },
+                        Argument = new Argument<string>(),
+                        Required = false
+                    },
+                };
+            
+            static BaseCommand<InformationCommandHandler> InformationCommand() =>
+                new BaseCommand<InformationCommandHandler>(
+                    "info",
+                    "Displays information about the selected deployment configuration."
+                )
+                {
+                    new Option(new[] {"-e", "--environment"}, "Name of the environment.")
+                    {
+                        Argument = new Argument<string>(),
+                        Required = false
+                    },
+                    new Option(new[] {"-v", "--vertical"}, "Name of the vertical.")
+                    {
+                        Argument = new Argument<string>(),
+                        Required = false
+                    },
+                    new Option(new[] {"-c", "--cluster"}, "Name of the cluster.")
+                    {
+                        Argument = new Argument<string>(),
+                        Required = false
+                    },
+                    new Option(new[] {"-s", "--subvertical"}, "Name of the sub-vertical (if used).")
+                    {
+                        Argument = new Argument<string>(),
+                        Required = false
+                    },
+                    new Option(new[] {"-n", "--namespace"}, "Name of namespace.")
+                    {
+                        Argument = new Argument<string>(),
+                        Required = false
+                    },
+                    new Option(new[] {"--name"}, "Name of the release.")
+                    {
+                        Argument = new Argument<string>(),
+                        Required = false
+                    },
+                    new Option(new[] {"--renderer"}, "Renderer to use to generate the chart.")
+                    {
+                        Argument = new Argument<string>() { },
                         Required = false
                     },
                 };
@@ -69,6 +116,7 @@ namespace HelmPreprocessor
             var commandLineBuilder = new CommandLineBuilder()
                 .AddCommand(ListEnvironments())
                 .AddCommand(RenderEnvironment())
+                .AddCommand(InformationCommand())
                 .AddOption(new Option(new[] {"--verbose"}))
                 .UseDefaults()
                 .UseHost(
@@ -113,6 +161,9 @@ namespace HelmPreprocessor
                             {
                                 //services.AddHostedService<Worker>();
                                 services.AddScoped<RenderCommandHandler>();
+                                services.AddScoped<ListConfigurationsCommandHandler>();
+                                services.AddScoped<InformationCommandHandler>();
+
                                 services
                                     .AddScoped<IDeploymentConfigurationPathProvider, DeploymentConfigurationPathProvider
                                     >();
@@ -127,6 +178,8 @@ namespace HelmPreprocessor
                                 services.AddScoped<IDeploymentRenderer, Helm2DeploymentRenderer>();
                                 services.AddScoped<IDeploymentRenderer, Helm3DeploymentRenderer>();
                                 services.AddSingleton<IDeploymentRendererFactory, DeploymentRendererFactory>();
+                                
+                                services.AddScoped<IDeploymentRendererContextBuilder, DeploymentRendererContextBuilder>();
                                 
                                 services.AddOptions<RenderArguments>().BindCommandLine();
                                 services.AddOptions<GeneralArguments>().BindCommandLine();
