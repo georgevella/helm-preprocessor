@@ -108,16 +108,60 @@ namespace HelmPreprocessor
                     },
                 };
 
-            static Command ListEnvironments() => new BaseCommand<ListConfigurationsCommandHandler>(
+            static Command ListEnvironmentsCommand() => new BaseCommand<ListConfigurationsCommandHandler>(
                 "list-configurations",
                 alias: "ls",
                 description: "List all configurations present in the repository."
             );
 
+            static Command DiagnosticsCommand() => new BaseCommand<DiagnosticsCommandHandler>(
+                name: "diagnostics",
+                alias: "diag",
+                description: "Output diagnostic info about the deployment config."
+            )
+            {
+                new Option(new[] {"-e", "--environment"}, "Name of the environment.")
+                {
+                    Argument = new Argument<string>(),
+                    Required = false
+                },
+                new Option(new[] {"-v", "--vertical"}, "Name of the vertical.")
+                {
+                    Argument = new Argument<string>(),
+                    Required = false
+                },
+                new Option(new[] {"-c", "--cluster"}, "Name of the cluster.")
+                {
+                    Argument = new Argument<string>(),
+                    Required = false
+                },
+                new Option(new[] {"-s", "--subvertical"}, "Name of the sub-vertical (if used).")
+                {
+                    Argument = new Argument<string>(),
+                    Required = false
+                },
+                new Option(new[] {"-n", "--namespace"}, "Name of namespace.")
+                {
+                    Argument = new Argument<string>(),
+                    Required = false
+                },
+                new Option(new[] {"--name"}, "Name of the release.")
+                {
+                    Argument = new Argument<string>(),
+                    Required = false
+                },
+                new Option(new[] {"--renderer"}, "Renderer to use to generate the chart.")
+                {
+                    Argument = new Argument<string>() { },
+                    Required = false
+                },
+            };
+
             var commandLineBuilder = new CommandLineBuilder()
-                .AddCommand(ListEnvironments())
+                .AddCommand(ListEnvironmentsCommand())
                 .AddCommand(RenderEnvironment())
                 .AddCommand(InformationCommand())
+                .AddCommand(DiagnosticsCommand())
                 .AddOption(new Option(new[] {"--verbose"}))
                 .UseDefaults()
                 .UseHost(
@@ -164,6 +208,7 @@ namespace HelmPreprocessor
                                 services.AddScoped<RenderCommandHandler>();
                                 services.AddScoped<ListConfigurationsCommandHandler>();
                                 services.AddScoped<InformationCommandHandler>();
+                                services.AddScoped<DiagnosticsCommandHandler>();
 
                                 services
                                     .AddScoped<IDeploymentConfigurationPathProvider, DeploymentConfigurationPathProvider

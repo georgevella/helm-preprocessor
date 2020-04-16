@@ -4,6 +4,7 @@ using System.CommandLine.Rendering;
 using System.Threading;
 using System.Threading.Tasks;
 using HelmPreprocessor.Services;
+using YamlDotNet.Serialization;
 
 namespace HelmPreprocessor.Commands.Handlers
 {

@@ -64,7 +64,9 @@ namespace HelmPreprocessor.Services
         }
 
         private DeploymentRendererContext GenerateHelmDeploymentRendererContext(
-            DirectoryInfo configurationRootDirectory, DeploymentConfiguration deploymentConfiguration)
+            DirectoryInfo configurationRootDirectory, 
+            DeploymentConfiguration deploymentConfiguration
+            )
         {
             // start building list of helm value files
             var helmValueFiles = new List<FileInfo>
@@ -113,6 +115,7 @@ namespace HelmPreprocessor.Services
             }
 
             var deploymentRendererContext = new HelmRendererContext(
+                deploymentConfiguration,
                 GenerateName(),
                 GenerateNamespace(),
                 _deploymentConfigurationPathProvider.GetDeploymentRepositoryRoot(),

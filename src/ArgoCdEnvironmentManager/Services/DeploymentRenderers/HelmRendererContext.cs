@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Security;
+using HelmPreprocessor.Configuration;
 
 namespace HelmPreprocessor.Services.DeploymentRenderers
 {
@@ -12,6 +13,7 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
         public List<string> ValueFiles { get; set; } = new List<string>();
 
         public HelmRendererContext(
+            DeploymentConfiguration configuration,
             string name, 
             string ns, 
             DirectoryInfo workingDirectory, 
@@ -21,7 +23,7 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
             string? vertical = null, 
             string? subVertical = null
             ) 
-            : base(name, ns, workingDirectory, cluster, environment, vertical, subVertical)
+            : base(configuration, name, ns, workingDirectory, cluster, environment, vertical, subVertical)
         {
             Chart = chart;
         }

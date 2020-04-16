@@ -28,6 +28,12 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
         public override void Initialize(DeploymentRendererContext context)
         {
             FetchHelmDependencies(context);
+
+            var helmContext = (HelmRendererContext) context;
+            if (helmContext.Chart != null)
+            {
+                Fetch(context);
+            }
         }
 
         public override void Fetch(DeploymentRendererContext context)
