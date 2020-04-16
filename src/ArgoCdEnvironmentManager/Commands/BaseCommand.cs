@@ -9,8 +9,13 @@ namespace HelmPreprocessor.Commands
     public class BaseCommand<TCommandHandler> : Command
         where TCommandHandler : ICommandHandler
     {
-        public BaseCommand(string name, string? description = null) : base(name, description)
+        public BaseCommand(string name, string? alias = null, string? description = null) : base(name, description)
         {
+            if (!string.IsNullOrWhiteSpace(alias))
+            {
+                AddAlias(alias);
+            }
+            
             Handler = CommandHandler.Create<IHost>( 
                 async host =>
                 {
