@@ -41,7 +41,7 @@ namespace HelmPreprocessor.Services
         
         public DeploymentRendererContext GenerateDeploymentRendererContext()
         {
-            if (!_deploymentConfigurationPathProvider.TryGetConfigurationRoot(out var configurationRoot))
+            if (!_deploymentConfigurationPathProvider.TryGetDeploymentConfigurationRoot(out var configurationRoot))
                 throw new InvalidOperationException("Could not get configuration root directory for environment to render.");
             
             if (!_deploymentConfigurationProvider.GetDeploymentConfiguration(out var deploymentConfiguration))
@@ -70,7 +70,7 @@ namespace HelmPreprocessor.Services
             var helmValueFiles = new List<FileInfo>
             {
                 new FileInfo(Path.Combine(configurationRootDirectory.FullName, "values.yaml")),
-                new FileInfo(Path.Combine(configurationRootDirectory.FullName, "app-versions.yaml")),
+                new FileInfo(Path.Combine(configurationRootDirectory.FullName, Constants.APP_VERSIONS_FILENAME)),
                 new FileInfo(Path.Combine(configurationRootDirectory.FullName, "secrets.yaml"))
             };
             
@@ -115,7 +115,7 @@ namespace HelmPreprocessor.Services
             var deploymentRendererContext = new HelmRendererContext(
                 GenerateName(),
                 GenerateNamespace(),
-                _deploymentConfigurationPathProvider.GetDeploymentRepository(),
+                _deploymentConfigurationPathProvider.GetDeploymentRepositoryRoot(),
                 // ReSharper disable once ArgumentsStyleOther
                 chart: chart,
                 // ReSharper disable once ArgumentsStyleOther

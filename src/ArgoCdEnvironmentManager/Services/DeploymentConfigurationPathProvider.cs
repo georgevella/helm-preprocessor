@@ -12,8 +12,8 @@ namespace HelmPreprocessor.Services
 {
     public interface IDeploymentConfigurationPathProvider
     {
-        bool TryGetConfigurationRoot(out ConfigurationRoot configurationRootDirectory);
-        DirectoryInfo GetDeploymentRepository();
+        bool TryGetDeploymentConfigurationRoot(out ConfigurationRoot configurationRootDirectory);
+        DirectoryInfo GetDeploymentRepositoryRoot();
     }
 
     public class ConfigurationRoot
@@ -51,12 +51,12 @@ namespace HelmPreprocessor.Services
             _renderArguments = renderArguments;
         }
 
-        public DirectoryInfo GetDeploymentRepository()
+        public DirectoryInfo GetDeploymentRepositoryRoot()
         {
             return new DirectoryInfo(_renderConfiguration.Value.Repository ?? Environment.CurrentDirectory);
         }
         
-        public bool TryGetConfigurationRoot(out ConfigurationRoot configurationRootDirectory)
+        public bool TryGetDeploymentConfigurationRoot(out ConfigurationRoot configurationRootDirectory)
         {
             var renderConfiguration = _renderConfiguration.Value;
             var renderArguments = _renderArguments.Value;
@@ -80,7 +80,7 @@ namespace HelmPreprocessor.Services
 
                 var pathParts = new List<string>
                 {
-                    GetDeploymentRepository().FullName, 
+                    GetDeploymentRepositoryRoot().FullName, 
                     "config"
                 };
 

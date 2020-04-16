@@ -23,7 +23,7 @@ namespace HelmPreprocessor.Services
 
         public bool GetDeploymentConfiguration(out DeploymentConfiguration deploymentConfiguration)
         {
-            if (!_deploymentConfigurationPathProvider.TryGetConfigurationRoot(out var configurationRoot))
+            if (!_deploymentConfigurationPathProvider.TryGetDeploymentConfigurationRoot(out var configurationRoot))
             {
                 deploymentConfiguration = DeploymentConfiguration.Empty;
                 return false;
@@ -34,9 +34,9 @@ namespace HelmPreprocessor.Services
 
             var paths = new[]
             {
-                "preprocessor.yaml",
+                Constants.PREPROCESSOR_FILENAME,
                 "values.yaml",
-                "app-versions.yaml",
+                Constants.APP_VERSIONS_FILENAME,
             };
             
             foreach (var path in paths)

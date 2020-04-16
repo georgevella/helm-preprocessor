@@ -25,7 +25,7 @@ namespace HelmPreprocessor
             static BaseCommand<RenderCommandHandler> RenderEnvironment() =>
                 new BaseCommand<RenderCommandHandler>(
                     "render",
-                    "Renders the helm chart and produces the K8S resources that will be deployed to the cluster."
+                    description: "Renders the helm chart and produces the K8S resources that will be deployed to the cluster."
                 )
                 {
                     new Option(new[] {"-e", "--environment"}, "Name of the environment.")
@@ -68,7 +68,7 @@ namespace HelmPreprocessor
             static BaseCommand<InformationCommandHandler> InformationCommand() =>
                 new BaseCommand<InformationCommandHandler>(
                     "info",
-                    "Displays information about the selected deployment configuration."
+                    description: "Displays information about the selected deployment configuration."
                 )
                 {
                     new Option(new[] {"-e", "--environment"}, "Name of the environment.")
@@ -110,7 +110,8 @@ namespace HelmPreprocessor
 
             static Command ListEnvironments() => new BaseCommand<ListConfigurationsCommandHandler>(
                 "list-configurations",
-                "List all configurations present in the repository."
+                alias: "ls",
+                description: "List all configurations present in the repository."
             );
 
             var commandLineBuilder = new CommandLineBuilder()
@@ -175,8 +176,8 @@ namespace HelmPreprocessor
                                 
                                 services.Configure<ArgoCdEnvironment>(hostContext.Configuration);
 
-                                services.AddScoped<IDeploymentRenderer, Helm2DeploymentRenderer>();
-                                services.AddScoped<IDeploymentRenderer, Helm3DeploymentRenderer>();
+                                services.AddScoped<Helm2DeploymentRenderer>();
+                                services.AddScoped<Helm3DeploymentRenderer>();
                                 services.AddSingleton<IDeploymentRendererFactory, DeploymentRendererFactory>();
                                 
                                 services.AddScoped<IDeploymentRendererContextBuilder, DeploymentRendererContextBuilder>();

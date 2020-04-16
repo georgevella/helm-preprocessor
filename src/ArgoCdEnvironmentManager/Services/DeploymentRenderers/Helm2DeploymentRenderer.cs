@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -97,6 +98,31 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
                 processStartInfo.ArgumentList.Add("--namespace");
                 processStartInfo.ArgumentList.Add(namespaceName);
             }
+            
+            var environmentalVariables = new List<string>();
+
+            if (context.Cluster != null)
+            {
+                environmentalVariables.Add($"cluster={context.Cluster}");
+            }
+            
+            if (context.Environment != null)
+            {
+                environmentalVariables.Add($"environment={context.Environment}");
+            }
+            
+            if (context.SubVertical != null)
+            {
+                environmentalVariables.Add($"subvertical={context.SubVertical}");
+            }
+            
+            if (context.Vertical != null)
+            {
+                environmentalVariables.Add($"vertical={context.Vertical}");
+            }
+            
+            processStartInfo.ArgumentList.Add("--set-string");
+            processStartInfo.ArgumentList.Add(string.Join(",", environmentalVariables));
 
             if (_globalArguments.Value.Verbose)
             {

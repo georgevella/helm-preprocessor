@@ -40,7 +40,7 @@ namespace ArgoCdEnvironmentManager.Tests
                 );
 
 
-            p.TryGetConfigurationRoot(out var configurationRootDirectory).Should().BeTrue();
+            p.TryGetDeploymentConfigurationRoot(out var configurationRootDirectory).Should().BeTrue();
 
             configurationRootDirectory.FullName.Should().Be(expectedPath);
         }
