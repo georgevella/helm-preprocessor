@@ -39,7 +39,7 @@ workflows:
       - build:
           filters:
             tags:
-              only: /^\d+\.\d+\.\d+$/
+              only: /^\d+\.\d+\.\d+.*$/
 
       - publish-github-release:
           requires:
@@ -48,4 +48,4 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^\d+\.\d+\.\d+$/
+              only: /^\d+\.\d+\.\d+.*$/
