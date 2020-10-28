@@ -25,7 +25,6 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
             _globalArguments = globalArguments;
         }
         
-        
         public override void Initialize(DeploymentRendererContext context)
         {
             FetchHelmDependencies(context);
@@ -71,7 +70,12 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
             processStartInfo.ArgumentList.Add(chartOutputPath);
             processStartInfo.ArgumentList.Add("--untar");
 
-            Process.Start(processStartInfo).WaitForExit();
+            var process = Process.Start(processStartInfo);
+
+            if (process == null)
+                throw new InvalidOperationException("Could not fetch helm chart [failed to start process]");
+            
+            process.WaitForExit();
             
             // helm always extracts the chart to a subfolder, so we get the first subdirectory 
             var chartOutputDirectory = new DirectoryInfo(chartOutputPath);
@@ -84,7 +88,7 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
         {
             var helmContext = (HelmRendererContext) context;
             
-            var processStartInfo = new ProcessStartInfo("helm3");
+            var processStartInfo = new ProcessStartInfo("helm");
             processStartInfo.ArgumentList.Add("template");
             processStartInfo.ArgumentList.Add(context.Name);
             processStartInfo.ArgumentList.Add(".");

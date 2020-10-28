@@ -7,7 +7,6 @@ namespace HelmPreprocessor.Services
 {
     public class SopsSecretsHandler : ISecretsHandler
     {
-        
         public FileInfo Decode(FileInfo fileInfo)
         {
             if (!fileInfo.Exists)
