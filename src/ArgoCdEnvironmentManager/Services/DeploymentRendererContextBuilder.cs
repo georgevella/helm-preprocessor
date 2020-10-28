@@ -15,6 +15,7 @@ namespace HelmPreprocessor.Services
         private readonly IDeploymentConfigurationProvider _deploymentConfigurationProvider;
         private readonly IDeploymentConfigurationPathProvider _deploymentConfigurationPathProvider;
         private readonly ISecretsHandler _secretsHandler;
+        private readonly IDeploymentRendererFactory _deploymentRendererFactory;
         private readonly IOptions<ArgoCdEnvironment> _argoCdEnvironment;
         private readonly IOptions<RenderConfiguration> _renderConfiguration;
         private readonly IOptions<RenderArguments> _renderArguments;
@@ -24,6 +25,7 @@ namespace HelmPreprocessor.Services
             IDeploymentConfigurationProvider deploymentConfigurationProvider,
             IDeploymentConfigurationPathProvider deploymentConfigurationPathProvider,
             ISecretsHandler secretsHandler,
+            IDeploymentRendererFactory deploymentRendererFactory,
             IOptions<ArgoCdEnvironment> argoCdEnvironment,
             IOptions<RenderConfiguration> renderConfiguration,
             IOptions<RenderArguments> renderArguments,
@@ -33,6 +35,7 @@ namespace HelmPreprocessor.Services
             _deploymentConfigurationProvider = deploymentConfigurationProvider;
             _deploymentConfigurationPathProvider = deploymentConfigurationPathProvider;
             _secretsHandler = secretsHandler;
+            _deploymentRendererFactory = deploymentRendererFactory;
             _argoCdEnvironment = argoCdEnvironment;
             _renderConfiguration = renderConfiguration;
             _renderArguments = renderArguments;
@@ -48,8 +51,9 @@ namespace HelmPreprocessor.Services
                 throw new InvalidOperationException("Could not build deployment configuration for environment to render.");
             
             var configurationRootDirectory = (DirectoryInfo) configurationRoot;
+            var rendererType = _deploymentRendererFactory.GetDeploymentRendererType();
 
-            return deploymentConfiguration!.Renderer.Type switch
+            return rendererType switch
             {
                 RendererType.Helm2 => GenerateHelmDeploymentRendererContext(
                     configurationRootDirectory,

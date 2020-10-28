@@ -18,7 +18,7 @@ namespace HelmPreprocessor.Configuration
 
     public class RendererSettings
     {
-        public RendererType Type { get; set; } = RendererType.Helm2;
+        public RendererType Type { get; set; } = RendererType.Helm3;
         
         public SecretsConfiguration Secrets { get; } = new SecretsConfiguration();
         

@@ -33,10 +33,9 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
                     x => x
                 );
         }
-        
-        public IDeploymentRenderer GetDeploymentRenderer()
+
+        public RendererType GetDeploymentRendererType()
         {
-            // default to Helm3
             var rendererType = RendererType.Helm3;
 
             if (!string.IsNullOrEmpty(_renderArguments.Value.Renderer))
@@ -49,7 +48,12 @@ namespace HelmPreprocessor.Services.DeploymentRenderers
                 rendererType = deploymentConfiguration.Renderer.Type;
             }
 
-            return rendererType switch
+            return rendererType;
+        }
+
+        public IDeploymentRenderer GetDeploymentRenderer()
+        {
+            return GetDeploymentRendererType() switch
             {
                 RendererType.Helm2 => _serviceProvider.GetService<Helm2DeploymentRenderer>(),
                 RendererType.Helm3 => _serviceProvider.GetService<Helm3DeploymentRenderer>(),
